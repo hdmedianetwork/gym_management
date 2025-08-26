@@ -103,7 +103,7 @@ const Home = () => {
   const [tableData, setTableData] = useState(usersData.active);
   const [filteredData, setFilteredData] = useState(usersData.active);
   const [tableColumns, setTableColumns] = useState(columns.active);
-  const [tableTitle, setTableTitle] = useState('All Users');
+  const [tableTitle, setTableTitle] = useState('');
   const [searchText, setSearchText] = useState('');
   const [selectedUser, setSelectedUser] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -129,7 +129,7 @@ const Home = () => {
     setTableColumns(columns[type]);
     setSearchText('');
     setTableTitle(
-      type === 'active' ? 'All Users' : 
+      type === 'active' ? '' : 
       type === 'expiring' ? 'Expiring Users (Next 10 Days)' : 
       'Suspended Users'
     );
@@ -143,6 +143,11 @@ const Home = () => {
   const handleCloseModal = () => {
     setIsModalVisible(false);
     setSelectedUser(null);
+  };
+
+  const handleAddMember = () => {
+    // Add your add member logic here
+    console.log('Add member clicked');
   };
 
   return (
@@ -162,7 +167,7 @@ const Home = () => {
           >
             <div className="flex flex-col items-center">
               <UserOutlined className="text-lg mb-1" />
-              <span>Active</span>
+              <span>All</span>
               <span className="font-bold text-gray-900">{usersData.active.length}</span>
             </div>
           </button>
@@ -261,11 +266,11 @@ const Home = () => {
       </div>
 
       {activeTab && (
-        <div className="bg-white p-6 rounded-lg shadow-md mt-8">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <div className="bg-white p-3 rounded-lg shadow-md mt-8">
+          <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-semibold text-gray-800">{tableTitle}</h2>
-            <div className="w-full sm:w-64">
-              <div className="relative">
+            <div className="flex items-center gap-4">
+              <div className="relative w-64">
                 <input
                   type="text"
                   placeholder="Search..."
@@ -288,6 +293,26 @@ const Home = () => {
                   />
                 </svg>
               </div>
+              <button 
+                onClick={handleAddMember}
+                className="p-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                title="Add Member"
+              >
+                <svg 
+                  className="w-5 h-5" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24" 
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2} 
+                    d="M12 6v6m0 0v6m0-6h6m-6 0H6" 
+                  />
+                </svg>
+              </button>
             </div>
           </div>
           <div className="rounded-lg border border-gray-200 overflow-x-auto">
