@@ -213,6 +213,20 @@ const Navbar = () => {
               ))}
               <div className="pt-4 pb-3 border-t border-gray-800">
                 <div className="flex flex-col space-y-3 px-1">
+                  {/* Terminated Users Link */}
+                  <motion.div
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.1, duration: 0.2 }}
+                  >
+                    <Link
+                      to="/admin/terminated"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="w-full block text-center px-4 py-3 rounded-lg text-base font-medium transition-colors duration-200 text-gray-300 bg-gray-800/70 hover:bg-gray-700/70 hover:text-white"
+                    >
+                      Terminated Users
+                    </Link>
+                  </motion.div>
                   {authLinks.map((link, index) => (
                     <motion.div
                       key={link.path}
