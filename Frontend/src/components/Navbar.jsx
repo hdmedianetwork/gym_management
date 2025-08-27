@@ -59,6 +59,7 @@ const Navbar = () => {
     { name: 'Services', path: '/services', icon: <FaDumbbell className="w-5 h-5" /> },
     { name: 'Pricing', path: '/pricing', icon: <FiDollarSign className="w-6 h-6" /> },
     { name: 'About', path: '/about', icon: <FiInfo className="w-6 h-6" /> },
+    { name: 'Admin', path: '/admin', icon: <FiUser className="w-6 h-6" /> },
     { name: 'Contact', path: '/contact', icon: <FiMail className="w-6 h-6" /> },
   ];
 
