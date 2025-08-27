@@ -1,8 +1,12 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { fadeIn, staggerContainer } from '../utils/motion';
+import { FiAlertTriangle, FiStar, FiCheckCircle } from 'react-icons/fi';
+import Navbar from '../components/Navbar';
 
 const Home = () => {
+  const navigate = useNavigate();
   const plans = [
     {
       name: 'Basic',
@@ -72,167 +76,256 @@ const Home = () => {
     }, 2000);
   };
 
-  return (
-    <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white pt-4 sm:pt-6 md:pt-8 px-3 sm:px-4 md:px-6 lg:px-8 overflow-hidden"
-    >
-      {showInitialBanner && !isSubscribed && (
-        <motion.div 
-          initial={{ y: -100, opacity: 0 }}
-          animate={isBannerVisible ? { y: 0, opacity: 1 } : { y: -100, opacity: 0 }}
-          transition={{ duration: 0.3, ease: 'easeInOut' }}
-          className="w-full max-w-4xl mx-auto bg-gradient-to-r from-amber-600 to-orange-500 text-white rounded-xl p-4 sm:p-6 mb-8 sm:mb-12 shadow-lg"
-        >
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-0">
-            <div className="flex items-center">
-              <div className="flex-shrink-0 h-12 w-12 rounded-full bg-white/20 flex items-center justify-center mr-4">
-                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-lg font-bold">No Active Subscription</h3>
-                <p className="text-sm opacity-90">Subscribe to any plan below to unlock all premium features and start your fitness journey today!</p>
-              </div>
-            </div>
-            <button 
-              onClick={() => window.scrollTo({ top: document.getElementById('plans').offsetTop - 100, behavior: 'smooth' })}
-              className="mt-4 sm:mt-0 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-medium transition-colors"
-            >
-              View Plans
-            </button>
-          </div>
-        </motion.div>
-      )}
-      <div className="fixed inset-0 overflow-hidden -z-10">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-500/10 to-transparent opacity-30"></div>
-      </div>
-      
-      <motion.div 
-        variants={staggerContainer}
-        className="relative max-w-7xl mx-auto"
-      >
-        <motion.div 
-          variants={fadeIn('up', 'tween', 0.1, 1)}
-          className="text-center mb-20"
-        >
-          <span className="inline-block mb-4 px-4 py-1.5 text-sm font-semibold bg-white/10 backdrop-blur-sm rounded-full text-cyan-400">
-            PRICING PLANS
-          </span>
-          <h1 className="mt-2 text-4xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-gray-100 to-gray-400 sm:text-5xl lg:text-4xl">
-            Membership Plans
-          </h1>
-          <p className="mt-4 max-w-2xl mx-auto text-lg text-gray-300">
-            Choose the perfect plan that fits your fitness journey. All plans include access to our premium facilities and expert trainers.
-          </p>
-        </motion.div>
+  // Prevent all scrolling by adding a class to the HTML element
+  React.useEffect(() => {
+    // Add class to html element
+    document.documentElement.classList.add('no-scroll');
+    
+    // Cleanup function to remove the class when component unmounts
+    return () => {
+      document.documentElement.classList.remove('no-scroll');
+    };
+  }, []);
 
-        <div id="plans" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 mt-8 sm:mt-12 max-w-6xl mx-auto">
-          {plans.map((plan, index) => (
-            <motion.div 
-              key={index}
-              initial={{ y: 50, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: index * 0.1, duration: 0.5 }}
-              whileHover={{ y: -10 }}
-              className={`relative group ${plan.popular ? 'md:-mt-4' : ''}`}
-            >
-              {plan.popular && (
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
-                  <span className="bg-gradient-to-r from-purple-600 to-pink-500 text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg">
-                    MOST POPULAR
-                  </span>
-                </div>
-              )}
-              
-              <div className={`h-full bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl overflow-hidden transition-all duration-300 hover:border-${plan.gradient.split('-')[1]}-400/50 ${
-                plan.popular ? 'ring-2 ring-purple-500/30' : ''
-              }`}>
-                <div className={`h-2 bg-gradient-to-r ${plan.gradient}`}></div>
-                
-                <div className="p-5 sm:p-6 md:p-8">
-                  <div className="text-center">
-                    <h3 className="text-2xl font-bold text-white">{plan.name}</h3>
-                    <div className="mt-6 sm:mt-8 mb-8 sm:mb-10">
-                      <div className="flex flex-col items-center justify-center">
-                        <div className="flex items-end">
-                          <span className="text-3xl sm:text-4xl font-medium text-gray-300 mr-0.5">₹</span>
-                          <span className="text-5xl sm:text-4xl  text-white">
-                            {plan.price.replace('₹', '').replace(',', '')}
-                          </span>
-                          <span className="text-xl sm:text-2xl font-medium text-gray-300 mb-1 sm:mb-1.5 ml-0.5 sm:ml-1">/month</span>
-                        </div>
-                        <span className="text-sm font-medium text-gray-400 mt-3">billed monthly</span>
-                      </div>
-                    </div>
-                    
-                    <ul className="space-y-3 sm:space-y-4 text-sm sm:text-base text-left">
-                      {plan.features.map((feature, i) => (
-                        <motion.li 
-                          key={i} 
-                          className="flex items-start"
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: 0.5 + (i * 0.05) }}
-                        >
-                          <svg 
-                            className={`h-5 w-5 mt-0.5 flex-shrink-0 text-${plan.gradient.split('-')[1]}-400`} 
-                            fill="currentColor" 
-                            viewBox="0 0 20 20"
-                          >
-                            <path 
-                              fillRule="evenodd" 
-                              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" 
-                              clipRule="evenodd" 
-                            />
-                          </svg>
-                          <span className="ml-3 text-gray-300">{feature}</span>
-                        </motion.li>
-                      ))}
-                    </ul>
-                    
-                    <motion.button 
-                      whileHover={{ scale: 1.03 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => handleSubscribe(plan)}
-                      disabled={selectedPlan === plan}
-                      className={`mt-10 w-full py-3.5 px-6 rounded-xl font-semibold text-white transition-all duration-300 ${
-                        selectedPlan === plan
-                          ? 'bg-gray-500 cursor-not-allowed'
-                          : plan.popular 
-                            ? 'bg-gradient-to-r from-purple-600 to-pink-500 hover:shadow-lg hover:shadow-purple-500/30' 
-                            : 'bg-gray-700 hover:bg-gray-600'
-                      }`}
-                    >
-                      {selectedPlan === plan ? (
-                        <span className="flex items-center justify-center">
-                          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          Processing...
-                        </span>
-                      ) : 'Get Started'}
-                    </motion.button>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
+  return (
+    <div className="relative min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 text-gray-900 overflow-hidden">
+      <Navbar />
+      
+      {/* Animated Background */}
+      <div className="fixed inset-0 overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-gray-200/30 via-transparent to-transparent"></div>
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070')] opacity-5 mix-blend-overlay"></div>
+        
+        {/* Animated dots */}
+        <div className="absolute inset-0 opacity-10">
+          {[...Array(20)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute rounded-full bg-gray-800"
+              style={{
+                width: Math.random() * 6 + 2 + 'px',
+                height: Math.random() * 6 + 2 + 'px',
+                left: Math.random() * 100 + '%',
+                top: Math.random() * 100 + '%',
+              }}
+              animate={{
+                y: [0, -10, 0],
+                opacity: [0.3, 0.8, 0.3],
+              }}
+              transition={{
+                duration: 3 + Math.random() * 5,
+                repeat: Infinity,
+                ease: 'easeInOut',
+                delay: Math.random() * 2,
+              }}
+            />
           ))}
         </div>
-        
-        <motion.div 
-          className="mt-16 text-center text-sm text-gray-400"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-        >
-          <p>Need help choosing the right plan? <a href="#" className="text-cyan-400 hover:text-cyan-300 font-medium">Contact our team</a></p>
-        </motion.div>
-      </motion.div>
-    </motion.div>
+      </div>
+
+      {/* Main Content */}
+      <div className="relative z-10 h-full overflow-hidden">
+        {/* Pricing Section */}
+        <div className="h-full overflow-y-auto">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
+          <motion.div 
+            className="text-center mb-16 sm:mb-20"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+          >
+            <motion.span 
+              className="inline-block mb-4 px-4 py-1.5 text-xs sm:text-sm font-medium tracking-wider text-gray-600 bg-gray-100 rounded-full border border-gray-200"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+            >
+              FLEXIBLE MEMBERSHIPS
+            </motion.span>
+            <motion.h1 
+              className="mt-3 text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-gray-900"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.6 }}
+            >
+              <span className="text-gray-900">Perfect Plan</span>
+            </motion.h1>
+            <motion.p 
+              className="mt-4 max-w-2xl mx-auto text-base sm:text-lg text-gray-600"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.6 }}
+            >
+              Select the membership that matches your fitness goals. All plans include access to our premium facilities and expert trainers.
+            </motion.p>
+          </motion.div>
+
+          {/* Pricing Cards */}
+          <div id="plans" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto">
+            {plans.map((plan, index) => (
+              <motion.div 
+                key={index}
+                initial={{ y: 50, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ 
+                  delay: 0.1 * index, 
+                  duration: 0.6,
+                  ease: [0.4, 0, 0.2, 1]
+                }}
+                whileHover={{ y: -8 }}
+                className={`relative group ${plan.popular ? 'lg:-mt-4' : ''}`}
+              >
+                {plan.popular && (
+                  <motion.div 
+                    className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-10"
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 0.3, type: 'spring', stiffness: 300, damping: 20 }}
+                  >
+                    <span className="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-medium tracking-wide uppercase bg-gray-900 text-white">
+                      <FiStar className="mr-1.5" /> Most Popular
+                    </span>
+                  </motion.div>
+                )}
+                
+                <div className={`h-full bg-white border border-gray-200 rounded-2xl overflow-hidden transition-all duration-300 group-hover:shadow-xl ${
+                  plan.popular 
+                    ? 'ring-1 ring-gray-300 shadow-lg' 
+                    : 'hover:ring-1 hover:ring-gray-200'
+                }`}>
+                  <div className="h-1.5 bg-gray-100 relative overflow-hidden">
+                    <motion.div 
+                      className="absolute inset-0 bg-white/20"
+                      initial={{ x: '-100%' }}
+                      animate={{ x: '100%' }}
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        repeatType: 'loop',
+                        ease: 'linear',
+                      }}
+                    />
+                  </div>
+                  
+                  <div className="p-6 sm:p-8">
+                    <div className="text-center">
+                      <h3 className="text-2xl font-bold text-gray-900">{plan.name}</h3>
+                      
+                      <motion.div 
+                        className="mt-8 mb-10"
+                        whileHover={{ scale: 1.03 }}
+                        transition={{ type: 'spring', stiffness: 400, damping: 10 }}
+                      >
+                        <div className="flex flex-col items-center justify-center">
+                          <div className="flex items-baseline">
+                            <span className="text-3xl sm:text-4xl font-medium text-gray-300 mr-1.5">₹</span>
+                            <span className="text-5xl sm:text-6xl font-bold text-gray-900">
+                              {plan.price.replace('₹', '').replace(',', '')}
+                            </span>
+                            <span className="text-xl font-medium text-gray-400 ml-1.5">/month</span>
+                          </div>
+                          <span className="text-sm font-medium text-gray-400 mt-3">billed monthly</span>
+                        </div>
+                      </motion.div>
+                      
+                      <ul className="space-y-3.5 text-left mb-10">
+                        {plan.features.map((feature, i) => (
+                          <motion.li 
+                            key={i} 
+                            className="flex items-start group"
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ 
+                              delay: 0.5 + (i * 0.05),
+                              type: 'spring',
+                              stiffness: 300
+                            }}
+                          >
+                            <motion.div 
+                              className="flex-shrink-0 mt-1"
+                              whileHover={{ scale: 1.2, rotate: 5 }}
+                              transition={{ type: 'spring', stiffness: 500 }}
+                            >
+                              <svg 
+                                className={`h-5 w-5 ${plan.popular ? 'text-gray-900' : 'text-gray-600'}`} 
+                                fill="none" 
+                                viewBox="0 0 24 24" 
+                                stroke="currentColor"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </motion.div>
+                            <span className="ml-3 text-gray-600 group-hover:text-gray-900 transition-colors duration-200">
+                              {feature}
+                            </span>
+                          </motion.li>
+                        ))}
+                      </ul>
+                      
+                      <motion.div 
+                        className="mt-8"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <button
+                          onClick={() => handleSubscribe(plan)}
+                          disabled={selectedPlan === plan}
+                          className={`w-full py-3.5 px-6 rounded-xl font-medium transition-all duration-300 ${
+                            selectedPlan === plan
+                              ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                              : plan.popular 
+                                ? 'bg-gray-900 text-white hover:bg-gray-800' 
+                                : 'bg-gray-100 text-gray-900 border border-gray-200 hover:bg-gray-50'
+                          }`}
+                        >
+                          {selectedPlan === plan ? (
+                            <span className="flex items-center justify-center">
+                              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Processing...
+                            </span>
+                          ) : (
+                            <span className="flex items-center justify-center">
+                              <FiCheckCircle className="mr-2" />
+                              Get Started
+                            </span>
+                          )}
+                        </button>
+                      </motion.div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+          
+          <motion.div 
+            className="mt-16 text-center text-sm text-gray-400"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6, duration: 0.6 }}
+          >
+              <p>Need help choosing the right plan?{' '}
+                <button 
+                  onClick={() => navigate('/contact')}
+                  className="text-gray-900 hover:text-gray-700 cursor-pointer font-medium group transition-colors duration-200 border-b border-gray-400 pb-0.5 focus:outline-none"
+                >
+                  Contact our team
+                  <span className="inline-block ml-1 group-hover:translate-x-1 transition-transform duration-200">→</span>
+                </button>
+              </p>
+            </motion.div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Main Content */}
+      <div className="relative z-10 pt-16">
+        {/* Your page content goes here */}
+      </div>
+    </div>
   );
 };
 

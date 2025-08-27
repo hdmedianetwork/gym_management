@@ -27,7 +27,7 @@ const ContactUs = () => {
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white pt-20 pb-8 sm:pt-28 sm:pb-12 md:pt-22 md:pb-16 px-3 sm:px-4 md:px-6 lg:px-8 overflow-hidden"
+      className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white pt-4 sm:pt-8 pb-8 px-4 sm:px-6 md:px-8 lg:px-12 overflow-hidden"
     >
       <div className="fixed inset-0 overflow-hidden -z-10">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-500/10 to-transparent opacity-30"></div>
@@ -38,13 +38,13 @@ const ContactUs = () => {
         className="relative max-w-7xl mx-auto"
       >
         <motion.div 
-          variants={fadeIn('up', 'tween', 0.1, 1)}
-          className="text-center mb-12"
+          variants={fadeIn('up', 'tween', 0.1, 1)}  
+          className="text-center mb-8 sm:mb-12"
         >
-          <span className="text-blue-400 text-sm font-semibold tracking-wider uppercase">
+          <span className="text-blue-400 text-xl sm:text-2xl font-bold tracking-wider uppercase">
             GET IN TOUCH
           </span>
-          <h1 className="mt-2 text-4xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-gray-100 to-gray-400 sm:text-5xl lg:text-6xl">
+          <h1 className="mt-2 text-3xl sm:text-4xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-gray-100 to-gray-400 lg:text-6xl">
             Contact Us
           </h1>
           <p className="mt-4 max-w-2xl mx-auto text-lg text-gray-300">

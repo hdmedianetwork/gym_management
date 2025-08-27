@@ -1,43 +1,70 @@
 import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { FiMenu, FiX, FiHome, FiUser, FiInfo, FiDollarSign, FiLogIn, FiUserPlus, FiMail } from 'react-icons/fi';
+import { FaDumbbell } from 'react-icons/fa';
 
 const Navbar = () => {
   const location = useLocation();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  
-  // Close mobile menu when route changes
+  const navigate = useNavigate();
+  const [isOpen, setIsOpen] = useState(false);
+
+  // Toggle menu function
+  const toggleMenu = () => {
+    setIsOpen(!isOpen);
+  };
+
+  // Close menu function
+  const closeMenu = () => {
+    setIsOpen(false);
+  };
+
+  // Close menu when route changes
   useEffect(() => {
-    setIsMenuOpen(false);
+    setIsOpen(false);
   }, [location]);
-  
-  // Close mobile menu when clicking outside or pressing Escape
+
+  // Close menu when clicking outside or pressing Escape
   useEffect(() => {
-    if (!isMenuOpen) return;
+    const handleClickOutside = (event) => {
+      const menu = document.querySelector('.menu-content');
+      const button = document.querySelector('.menu-button');
+      const closeButton = document.querySelector('.close-button');
+
+      if (menu && button && closeButton && 
+          !menu.contains(event.target) && 
+          !button.contains(event.target) &&
+          !closeButton.contains(event.target)) {
+        closeMenu();
+      }
+    };
 
     const handleEscape = (event) => {
       if (event.key === 'Escape') {
-        setIsMenuOpen(false);
+        closeMenu();
       }
     };
     
+    document.addEventListener('mousedown', handleClickOutside);
     document.addEventListener('keydown', handleEscape);
-    document.body.style.overflow = 'hidden';
     
     return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'auto';
     };
-  }, [isMenuOpen]);
+  }, [isOpen]);
 
   const navLinks = [
-    { name: 'Home', path: '/home' },
-    { name: 'Contact', path: '/contact' },
+    { name: 'Home', path: '/', icon: <FiHome className="w-6 h-6" /> },
+    { name: 'Services', path: '/services', icon: <FaDumbbell className="w-5 h-5" /> },
+    { name: 'Pricing', path: '/pricing', icon: <FiDollarSign className="w-6 h-6" /> },
+    { name: 'About', path: '/about', icon: <FiInfo className="w-6 h-6" /> },
+    { name: 'Contact', path: '/contact', icon: <FiMail className="w-6 h-6" /> },
   ];
 
   const authLinks = [
-    { name: 'Sign In', path: '/login', isPrimary: false },
-    { name: 'Sign Up', path: '/signup', isPrimary: true },
+    { name: 'Sign In', path: '/login', icon: <FiLogIn className="w-5 h-5" /> },
+    { name: 'Sign Up', path: '/signup', icon: <FiUserPlus className="w-5 h-5" /> },
   ];
 
   const isActive = (path) => {
@@ -45,216 +72,173 @@ const Navbar = () => {
     return location.pathname === path;
   };
 
+  const handleLinkClick = (path) => {
+    setIsOpen(false);
+    navigate(path);
+  };
+
+  const menuVariants = {
+    hidden: { x: '-100%' },
+    visible: { 
+      x: 0,
+      transition: {
+        type: 'spring',
+        damping: 25,
+        stiffness: 300
+      }
+    },
+    exit: { 
+      x: '-100%',
+      transition: {
+        type: 'spring',
+        damping: 25,
+        stiffness: 300
+      }
+    }
+  };
+
+  const overlayVariants = {
+    hidden: { opacity: 0 },
+    visible: { 
+      opacity: 1,
+      backdropFilter: 'blur(8px)',
+      WebkitBackdropFilter: 'blur(8px)'
+    },
+    exit: { 
+      opacity: 0,
+      backdropFilter: 'blur(0px)',
+      WebkitBackdropFilter: 'blur(0px)'
+    }
+  };
+
   return (
-    <nav className="relative w-full z-50 bg-transparent">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Spacer to balance the flex layout */}
-          <div className="w-6 md:hidden"></div>
-          
-          {/* Logo - Centered on mobile, left on larger screens */}
-          <div className="flex-shrink-0 md:mr-auto">
-            <Link to="/" className="text-white text-xl font-bold">
-              <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-                GymFit
-              </span>
-            </Link>
-          </div>
+    <div className="relative">
+      {/* Menu Button */}
+      <motion.button
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.3 }}
+        onClick={toggleMenu}
+        className="menu-button fixed top-6 left-6 z-50 p-3 rounded-full bg-gray-900/80 backdrop-blur-sm border border-gray-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 focus:outline-none hover:bg-gray-800/90"
+        aria-label={isOpen ? 'Close menu' : 'Open menu'}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        <FiMenu className={`w-6 h-6 text-gray-100 transition-transform duration-300 ${isOpen ? 'opacity-0 rotate-90' : 'opacity-100'}`} />
+      </motion.button>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:block">
-            <div className="ml-10 flex items-center space-x-4">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.path}
-                  to={link.path}
-                  className={`px-3 py-2 rounded-md text-sm font-medium ${
-                    isActive(link.path)
-                      ? 'text-white bg-gray-900/50'
-                      : 'text-gray-300 hover:bg-gray-700/50 hover:text-white'
-                  }`}
-                >
-                  {link.name}
-                </Link>
-              ))}
-            </div>
-          </div>
-
-          {/* Auth Buttons - Desktop */}
-          <div className="hidden md:block">
-            <div className="ml-4 flex items-center md:ml-6 space-x-4">
-              {authLinks.map((link) => (
-                <Link
-                  key={link.path}
-                  to={link.path}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                    link.isPrimary
-                      ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white hover:from-blue-600 hover:to-cyan-600'
-                      : 'text-gray-300 hover:bg-gray-700/50 hover:text-white'
-                  }`}
-                >
-                  {link.name}
-                </Link>
-              ))}
-            </div>
-          </div>
-
-          {/* Mobile menu button */}
-          <div className="md:hidden">
-            <button
-              type="button"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="mobile-menu-button inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
-              aria-expanded="false"
-              aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
-            >
-              <span className="sr-only">Open main menu</span>
-              {isMenuOpen ? (
-                <svg
-                  className="block h-6 w-6"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              ) : (
-                <svg
-                  className="block h-6 w-6"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
-                </svg>
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile menu backdrop */}
       <AnimatePresence>
-        {isMenuOpen && (
+        {isOpen && (
           <>
+            {/* Blurred Overlay */}
             <motion.div
-              className="fixed inset-0 bg-black/50 z-30"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsMenuOpen(false)}
+              variants={overlayVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              transition={{ duration: 0.3 }}
+              onClick={() => setIsOpen(false)}
+              className="fixed inset-0 bg-black/50 z-40"
             />
-            <motion.div 
-              id="mobile-menu"
-              className="md:hidden fixed inset-0 z-40 bg-gray-900/80 backdrop-blur-xl"
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.2 }}
+
+            {/* Full-screen Menu */}
+            <motion.div
+              variants={menuVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              className="menu-content fixed top-0 left-0 w-full h-screen bg-black text-white z-50 overflow-y-auto py-6 px-8 shadow-2xl"
             >
-              {/* Close button */}
-              <div className="flex justify-between items-center px-4 pt-4">
-                <div className="w-8"></div> {/* Spacer for centering the title */}
-                <h2 className="text-xl font-bold text-white">Menu</h2>
-                <button
-                  onClick={() => setIsMenuOpen(false)}
-                  className="p-2 rounded-full hover:bg-gray-800 transition-colors"
-                  aria-label="Close menu"
-                >
-                  <svg
-                    className="h-6 w-6 text-white"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
+              {/* Close Button */}
+              <motion.button
+                onClick={closeMenu}
+                className="close-button fixed top-6 right-6 z-50 p-3 rounded-full bg-gray-800/80 backdrop-blur-sm border border-gray-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 focus:outline-none hover:bg-gray-700/90"
+                aria-label="Close menu"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0, transition: { delay: 0.2 } }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <FiX className="w-6 h-6 text-gray-100" />
+              </motion.button>
+              <div className="container mx-auto h-full flex flex-col">
+                {/* Logo */}
+                <div className="mb-12">
+                  <Link 
+                    to="/" 
+                    className="text-3xl font-bold text-white"
+                    onClick={() => setIsOpen(false)}
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-              </div>
-              <div className="pt-4 px-2">
-            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-              {navLinks.map((link) => (
-                <motion.div
-                  key={link.path}
-                  initial={{ x: -20, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <Link
-                    to={link.path}
-                    onClick={() => setIsMenuOpen(false)}
-                    className={`block px-4 py-3 rounded-md text-lg font-medium transition-colors duration-200 ${
-                      isActive(link.path)
-                        ? 'text-white bg-gray-800/70'
-                        : 'text-gray-300 hover:bg-gray-800/70 hover:text-white'
-                    }`}
-                  >
-                    {link.name}
+                    GymFit Pro
                   </Link>
-                </motion.div>
-              ))}
-              <div className="pt-4 pb-3 border-t border-gray-800">
-                <div className="flex flex-col space-y-3 px-1">
-                  {/* Terminated Users Link */}
-                  <motion.div
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.1, duration: 0.2 }}
-                  >
-                    <Link
-                      to="/admin/terminated"
-                      onClick={() => setIsMenuOpen(false)}
-                      className="w-full block text-center px-4 py-3 rounded-lg text-base font-medium transition-colors duration-200 text-gray-300 bg-gray-800/70 hover:bg-gray-700/70 hover:text-white"
-                    >
-                      Terminated Users
-                    </Link>
-                  </motion.div>
-                  {authLinks.map((link, index) => (
+                </div>
+
+                {/* Navigation Links */}
+                <nav className="flex-1 flex flex-col justify-center space-y-4">
+                  {navLinks.map((link, index) => (
                     <motion.div
                       key={link.path}
-                      initial={{ y: 20, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      transition={{ delay: 0.1 * index + 0.2, duration: 0.2 }}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ 
+                        opacity: 1, 
+                        x: 0,
+                        transition: { delay: 0.1 * index }
+                      }}
                     >
                       <Link
                         to={link.path}
-                        className={`w-full block text-center px-4 py-3 rounded-lg text-base font-medium transition-colors duration-200 ${
-                          link.isPrimary
-                            ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white hover:from-blue-600 hover:to-cyan-600'
-                            : 'text-gray-300 bg-gray-800/70 hover:bg-gray-700/70 hover:text-white'
+                        onClick={() => handleLinkClick(link.path)}
+                        className={`flex items-center px-6 py-4 rounded-xl text-xl font-medium transition-all ${
+                          isActive(link.path) 
+                            ? 'bg-gradient-to-r from-indigo-600/20 to-purple-600/20 text-white border-l-4 border-indigo-400' 
+                            : 'text-gray-300 hover:bg-gray-800/50 hover:text-white'
                         }`}
                       >
+                        <span className="mr-3">{link.icon}</span>
                         {link.name}
                       </Link>
                     </motion.div>
                   ))}
+                </nav>
+
+                {/* Auth Buttons */}
+                <div className="mt-12 pt-6 border-t border-gray-700">
+                  <div className="space-y-4">
+                    {authLinks.map((link, index) => (
+                      <motion.div
+                        key={link.path}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ 
+                          opacity: 1, 
+                          y: 0,
+                          transition: { 
+                            delay: 0.1 * index + 0.3,
+                            type: 'spring',
+                            stiffness: 300
+                          }
+                        }}
+                      >
+                        <button
+                          onClick={() => handleLinkClick(link.path)}
+                          className={`w-full flex items-center justify-center px-6 py-4 rounded-xl text-lg font-medium transition-all ${
+                            link.name === 'Sign Up'
+                              ? 'bg-white text-gray-900 hover:bg-gray-100 hover:shadow-lg hover:shadow-white/10'
+                              : 'border-2 border-gray-700 text-gray-300 hover:border-indigo-500 hover:text-white'
+                          }`}
+                        >
+                          {link.icon}
+                          <span className="ml-2">{link.name}</span>
+                        </button>
+                      </motion.div>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-            </div>
             </motion.div>
           </>
         )}
       </AnimatePresence>
-    </nav>
+    </div>
   );
 };
 
