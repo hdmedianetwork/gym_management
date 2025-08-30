@@ -2,25 +2,84 @@ import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
+import { generateOTP, sendOTP } from "../utils/emailService.js";
 
 const router = express.Router();
 
-// Register
-router.post("/register", async (req, res) => {
+// Send OTP
+router.post("/send-otp", async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { email } = req.body;
+    
+    // Generate OTP
+    const otp = generateOTP();
+    const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) return res.status(400).json({ error: "Email already exists" });
+    // Save OTP to user or create new user if not exists
+    let user = await User.findOneAndUpdate(
+      { email },
+      { 
+        otp,
+        otpExpires,
+        isVerified: false 
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    // Send OTP to email
+    const emailSent = await sendOTP(email, otp);
+    if (!emailSent) {
+      return res.status(500).json({ error: 'Failed to send OTP' });
+    }
+
+    res.json({ message: 'OTP sent successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Verify OTP and Register
+router.post("/verify-otp", async (req, res) => {
+  try {
+    const { email, otp, name, password, mobile } = req.body;
+
+    // Find user with the provided email and OTP
+    const user = await User.findOne({ 
+      email, 
+      otp,
+      otpExpires: { $gt: Date.now() } // Check if OTP is not expired
+    });
+
+    if (!user) {
+      return res.status(400).json({ error: "Invalid or expired OTP" });
+    }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const newUser = new User({ name, email, password: hashedPassword });
-    await newUser.save();
+    // Update user with verified status and clear OTP
+    user.name = name;
+    user.password = hashedPassword;
+    user.mobile = mobile;
+    user.isVerified = true;
+    user.otp = undefined;
+    user.otpExpires = undefined;
+    
+    await user.save();
 
-    res.status(201).json({ message: "User registered successfully" });
+    // Generate JWT token
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+
+    res.json({ 
+      message: "Registration successful",
+      token,
+      user: { 
+        id: user._id, 
+        name: user.name, 
+        email: user.email,
+        isVerified: user.isVerified
+      } 
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -33,13 +92,28 @@ router.post("/login", async (req, res) => {
 
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ error: "User not found" });
+    
+    if (!user.isVerified) {
+      return res.status(403).json({ 
+        error: "Email not verified. Please verify your email first.",
+        needsVerification: true
+      });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ error: "Invalid credentials" });
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
 
-    res.json({ token, user: { id: user._id, name: user.name, email: user.email } });
+    res.json({ 
+      token, 
+      user: { 
+        id: user._id, 
+        name: user.name, 
+        email: user.email,
+        isVerified: user.isVerified
+      } 
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

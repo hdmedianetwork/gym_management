@@ -28,14 +28,14 @@ export const login = async (email, password) => {
   }
 };
 
-export const register = async (name, email, password) => {
+export const register = async (name, email, mobile, password) => {
   try {
     const response = await fetch(`${API_URL}/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ name, email, password }),
+      body: JSON.stringify({ name, email, mobile, password }),
     });
     
     const data = await response.json();
@@ -46,6 +46,54 @@ export const register = async (name, email, password) => {
     return data;
   } catch (error) {
     console.error('Registration error:', error);
+    throw error;
+  }
+};
+
+export const sendOTP = async (email) => {
+  try {
+    const response = await fetch(`${API_URL}/auth/send-otp`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to send OTP');
+    }
+    return data;
+  } catch (error) {
+    console.error('Send OTP error:', error);
+    throw error;
+  }
+};
+
+export const verifyOTP = async (email, otp, name = '', mobile = '', password = '') => {
+  try {
+    const requestBody = { email, otp };
+    
+    // Only include these fields if they're provided
+    if (name) requestBody.name = name;
+    if (mobile) requestBody.mobile = mobile;
+    if (password) requestBody.password = password;
+    
+    const response = await fetch(`${API_URL}/auth/verify-otp`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+    
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || 'Verification failed');
+    }
+    return data;
+  } catch (error) {
+    console.error('Verify OTP error:', error);
     throw error;
   }
 };

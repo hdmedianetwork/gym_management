@@ -7,6 +7,7 @@ import Navbar from '../components/Navbar';
 
 const Home = () => {
   const navigate = useNavigate();
+  const [user, setUser] = React.useState(null);
   const plans = [
     {
       name: 'Basic',
@@ -67,6 +68,14 @@ const Home = () => {
     return () => clearTimeout(timer);
   }, []);
 
+  React.useEffect(() => {
+    // Check if user is logged in
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      setUser(JSON.parse(userData));
+    }
+  }, []);
+
   const handleSubscribe = (plan) => {
     setSelectedPlan(plan);
     // In a real app, you would handle the subscription logic here
@@ -90,6 +99,36 @@ const Home = () => {
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 text-gray-900 overflow-hidden">
       <Navbar />
+      
+      {/* Welcome Section */}
+      {user && (
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gradient-to-r from-purple-900 to-blue-900 py-8 px-4 sm:px-6 lg:px-8"
+        >
+          <div className="max-w-7xl mx-auto">
+            <div className="flex flex-col md:flex-row items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-white">
+                  Welcome back, {user.name || 'Valued Member'}!
+                </h1>
+                <p className="mt-2 text-purple-200">
+                  {user.mobile ? `Mobile: ${user.mobile}` : 'Thank you for joining us!'}
+                </p>
+              </div>
+              <div className="mt-4 md:mt-0">
+                <button
+                  onClick={() => navigate('/profile')}
+                  className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  View Profile
+                </button>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
       
       {/* Animated Background */}
       <div className="fixed inset-0 overflow-hidden">

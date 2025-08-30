@@ -1,13 +1,44 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiMenu, FiX, FiHome, FiUser, FiInfo, FiDollarSign, FiLogIn, FiUserPlus, FiMail } from 'react-icons/fi';
+import { 
+  FiMenu, 
+  FiX, 
+  FiHome, 
+  FiUser, 
+  FiInfo, 
+  FiDollarSign, 
+  FiLogIn, 
+  FiUserPlus, 
+  FiMail,
+  FiLogOut,
+  FiSettings,
+  FiCalendar
+} from 'react-icons/fi';
 import { FaDumbbell } from 'react-icons/fa';
 
 const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
+  const [user, setUser] = useState(null);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+  useEffect(() => {
+    // Load user data from localStorage
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      setUser(JSON.parse(userData));
+    }
+  }, [location]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setUser(null);
+    navigate('/login');
+    setIsProfileOpen(false);
+  };
 
   // Toggle menu function
   const toggleMenu = () => {
@@ -24,24 +55,35 @@ const Navbar = () => {
     setIsOpen(false);
   }, [location]);
 
-  // Close menu when clicking outside or pressing Escape
+  // Close menus when clicking outside or pressing Escape
   useEffect(() => {
     const handleClickOutside = (event) => {
       const menu = document.querySelector('.menu-content');
       const button = document.querySelector('.menu-button');
       const closeButton = document.querySelector('.close-button');
+      const profileMenu = document.querySelector('.profile-menu');
+      const profileButton = document.querySelector('.profile-button');
 
+      // Close mobile menu
       if (menu && button && closeButton && 
           !menu.contains(event.target) && 
           !button.contains(event.target) &&
           !closeButton.contains(event.target)) {
         closeMenu();
       }
+
+      // Close profile menu
+      if (profileMenu && profileButton && 
+          !profileMenu.contains(event.target) && 
+          !profileButton.contains(event.target)) {
+        setIsProfileOpen(false);
+      }
     };
 
     const handleEscape = (event) => {
       if (event.key === 'Escape') {
         closeMenu();
+        setIsProfileOpen(false);
       }
     };
     
@@ -52,7 +94,7 @@ const Navbar = () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleEscape);
     };
-  }, [isOpen]);
+  }, []);
 
   const navLinks = [
     { name: 'Home', path: '/', icon: <FiHome className="w-6 h-6" /> },
@@ -113,21 +155,103 @@ const Navbar = () => {
   };
 
   return (
-    <div className="relative">
-      {/* Menu Button */}
-      <motion.button
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.3 }}
-        onClick={toggleMenu}
-        className="menu-button fixed top-6 left-6 z-50 p-3 rounded-full bg-gray-900/80 backdrop-blur-sm border border-gray-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 focus:outline-none hover:bg-gray-800/90"
-        aria-label={isOpen ? 'Close menu' : 'Open menu'}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-      >
-        <FiMenu className={`w-6 h-6 text-gray-100 transition-transform duration-300 ${isOpen ? 'opacity-0 rotate-90' : 'opacity-100'}`} />
-      </motion.button>
+    <div className="fixed top-0 left-0 right-0 z-40 bg-gray-900/80 backdrop-blur-sm border-b border-gray-800">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          {/* Menu Button */}
+          <motion.button
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3 }}
+            onClick={toggleMenu}
+            className="p-2 rounded-full text-gray-300 hover:text-white hover:bg-gray-800 focus:outline-none"
+            aria-label={isOpen ? 'Close menu' : 'Open menu'}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <FiMenu className="w-6 h-6" />
+          </motion.button>
 
+          {/* Logo */}
+          <Link to="/home" className="flex-shrink-0">
+            <h1 className="text-xl font-bold text-white">Gym Management</h1>
+          </Link>
+
+          {/* Profile Section */}
+          <div className="flex items-center">
+            {user ? (
+              <div className="relative">
+                <button
+                  onClick={() => setIsProfileOpen(!isProfileOpen)}
+                  className="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white"
+                >
+                  <span className="sr-only">Open user menu</span>
+                  <div className="h-8 w-8 rounded-full bg-purple-600 flex items-center justify-center">
+                    <FiUser className="h-4 w-4 text-white" />
+                  </div>
+                  <span className="ml-2 text-sm font-medium text-gray-300 hidden md:inline">
+                    {user.name || 'Profile'}
+                  </span>
+                </button>
+
+                {/* Profile Dropdown */}
+                {isProfileOpen && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-gray-800 ring-1 ring-black ring-opacity-5 focus:outline-none z-50"
+                    role="menu"
+                  >
+                    <div className="py-1" role="none">
+                      <Link
+                        to="/profile"
+                        className="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
+                        role="menuitem"
+                        onClick={() => setIsProfileOpen(false)}
+                      >
+                        <FiUser className="mr-2" /> Your Profile
+                      </Link>
+                      <Link
+                        to="/settings"
+                        className="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
+                        role="menuitem"
+                        onClick={() => setIsProfileOpen(false)}
+                      >
+                        <FiSettings className="mr-2" /> Settings
+                      </Link>
+                      <button
+                        onClick={handleLogout}
+                        className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
+                        role="menuitem"
+                      >
+                        <FiLogOut className="mr-2" /> Sign out
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </div>
+            ) : (
+              <div className="flex space-x-4">
+                <Link
+                  to="/login"
+                  className="text-gray-300 hover:bg-gray-800 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Sign in
+                </Link>
+                <Link
+                  to="/signup"
+                  className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Sign up
+                </Link>
+              </div>
+            )}
+          </div>
+
+        </div>
+      </div>
+
+      {/* Mobile Menu */}
       <AnimatePresence>
         {isOpen && (
           <>
@@ -202,37 +326,99 @@ const Navbar = () => {
                   ))}
                 </nav>
 
-                {/* Auth Buttons */}
+                {/* Auth Buttons or User Profile */}
                 <div className="mt-12 pt-6 border-t border-gray-700">
-                  <div className="space-y-4">
-                    {authLinks.map((link, index) => (
+                  {user ? (
+                    <div className="space-y-4">
+                      {/* User Profile */}
                       <motion.div
-                        key={link.path}
                         initial={{ opacity: 0, y: 20 }}
-                        animate={{ 
-                          opacity: 1, 
+                        animate={{
+                          opacity: 1,
                           y: 0,
-                          transition: { 
-                            delay: 0.1 * index + 0.3,
+                          transition: {
+                            delay: 0.1,
                             type: 'spring',
                             stiffness: 300
                           }
                         }}
+                        className="flex items-center px-6 py-4 rounded-xl bg-gray-800/50"
                       >
-                        <button
-                          onClick={() => handleLinkClick(link.path)}
-                          className={`w-full flex items-center justify-center px-6 py-4 rounded-xl text-lg font-medium transition-all ${
-                            link.name === 'Sign Up'
-                              ? 'bg-white text-gray-900 hover:bg-gray-100 hover:shadow-lg hover:shadow-white/10'
-                              : 'border-2 border-gray-700 text-gray-300 hover:border-indigo-500 hover:text-white'
-                          }`}
-                        >
-                          {link.icon}
-                          <span className="ml-2">{link.name}</span>
-                        </button>
+                        <div className="h-10 w-10 rounded-full bg-purple-600 flex items-center justify-center mr-3">
+                          <FiUser className="h-5 w-5 text-white" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-white">{user.name || 'User'}</p>
+                          <p className="text-sm text-gray-400">{user.email}</p>
+                        </div>
                       </motion.div>
-                    ))}
-                  </div>
+
+                      {/* Profile Links */}
+                      {[
+                        { name: 'Your Profile', path: '/profile', icon: <FiUser className="w-5 h-5" /> },
+                        { name: 'Settings', path: '/settings', icon: <FiSettings className="w-5 h-5" /> },
+                        { name: 'Sign Out', action: handleLogout, icon: <FiLogOut className="w-5 h-5" /> }
+                      ].map((item, index) => (
+                        <motion.div
+                          key={item.name}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{
+                            opacity: 1,
+                            y: 0,
+                            transition: {
+                              delay: 0.1 * (index + 1) + 0.3,
+                              type: 'spring',
+                              stiffness: 300
+                            }
+                          }}
+                        >
+                          <button
+                            onClick={() => {
+                              if (item.action) {
+                                item.action();
+                              } else {
+                                handleLinkClick(item.path);
+                              }
+                            }}
+                            className="w-full flex items-center px-6 py-4 rounded-xl text-lg font-medium text-gray-300 hover:bg-gray-800/50 hover:text-white transition-all"
+                          >
+                            <span className="mr-3">{item.icon}</span>
+                            {item.name}
+                          </button>
+                        </motion.div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {authLinks.map((link, index) => (
+                        <motion.div
+                          key={link.path}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{
+                            opacity: 1,
+                            y: 0,
+                            transition: {
+                              delay: 0.1 * index + 0.3,
+                              type: 'spring',
+                              stiffness: 300
+                            }
+                          }}
+                        >
+                          <button
+                            onClick={() => handleLinkClick(link.path)}
+                            className={`w-full flex items-center justify-center px-6 py-4 rounded-xl text-lg font-medium transition-all ${
+                              link.name === 'Sign Up'
+                                ? 'bg-white text-gray-900 hover:bg-gray-100 hover:shadow-lg hover:shadow-white/10'
+                                : 'border-2 border-gray-700 text-gray-300 hover:border-indigo-500 hover:text-white'
+                            }`}
+                          >
+                            {link.icon}
+                            <span className="ml-2">{link.name}</span>
+                          </button>
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </motion.div>

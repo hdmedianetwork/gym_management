@@ -34,9 +34,14 @@ const Login = () => {
       const response = await login(formData.email, formData.password);
       
       if (response.token) {
+        // Save token and user data to localStorage
+        localStorage.setItem('token', response.token);
+        if (response.user) {
+          localStorage.setItem('user', JSON.stringify(response.user));
+        }
         toast.success('Login successful!');
         // Redirect to dashboard or home page after successful login
-        navigate('/dashboard');
+        navigate('/home');
       }
     } catch (error) {
       toast.error(error.message || 'Login failed. Please try again.');
