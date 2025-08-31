@@ -1,8 +1,8 @@
-const API_URL = 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL;
 export const getAllUsers = async () => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${API_URL}/auth/admin/all-users`, {
+    const response = await fetch(`${API_URL}/api/auth/admin/all-users`, {
       headers: {
         'Authorization': token ? `Bearer ${token}` : undefined,
         'Content-Type': 'application/json',
@@ -21,7 +21,7 @@ export const getAllUsers = async () => {
 };
 export const login = async (email, password) => {
   try {
-    const response = await fetch(`${API_URL}/auth/login`, {
+    const response = await fetch(`${API_URL}/api/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -49,7 +49,7 @@ export const login = async (email, password) => {
 
 export const register = async (name, email, mobile, password) => {
   try {
-    const response = await fetch(`${API_URL}/auth/register`, {
+    const response = await fetch(`${API_URL}/api/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -71,7 +71,7 @@ export const register = async (name, email, mobile, password) => {
 
 export const sendOTP = async (email) => {
   try {
-    const response = await fetch(`${API_URL}/auth/send-otp`, {
+    const response = await fetch(`${API_URL}/api/auth/send-otp`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -98,7 +98,7 @@ export const verifyOTP = async (email, otp, name = '', mobile = '', password = '
     if (mobile) requestBody.mobile = mobile;
     if (password) requestBody.password = password;
     
-    const response = await fetch(`${API_URL}/auth/verify-otp`, {
+    const response = await fetch(`${API_URL}/api/auth/verify-otp`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -122,7 +122,7 @@ export const getCurrentUser = async () => {
     const token = localStorage.getItem('token');
     if (!token) return null;
     
-    const response = await fetch(`${API_URL}/auth/me`, {
+    const response = await fetch(`${API_URL}/api/auth/me`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
