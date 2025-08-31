@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    { "source": "/login", "destination": "/index.html" },
+    { "source": "/signup", "destination": "/index.html" },
+    { "source": "/admin", "destination": "/index.html" },
+    { "source": "/verify-otp", "destination": "/index.html" },
+    { "source": "/adminlogin", "destination": "/index.html" },
+    { "source": "/contact", "destination": "/index.html" },
+    { "source": "/home", "destination": "/index.html" },
+    { "source": "/", "destination": "/index.html" }
+  ]
+}
