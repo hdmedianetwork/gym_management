@@ -10,7 +10,7 @@ const router = express.Router();
 // Get all users for admin dashboard
 router.get("/admin/all-users", async (req, res) => {
   try {
-    const users = await User.find({});
+    const users = await User.find({ isVerified: true });
     res.json({ users });
   } catch (err) {
     res.status(500).json({ error: err.message });
