@@ -25,8 +25,25 @@ console.log('Environment variables loaded successfully');
 
 const app = express();
 app.use(express.json());
+// Allowed origins
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://gymfit-phi.vercel.app',
+  'https://gymfit-phi.vercel.app/'
+];
+
 app.use(cors({
-    origin: 'http://localhost:5173', // Your frontend URL
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        
+        // Check if the origin is in the allowed list
+        if (allowedOrigins.indexOf(origin) === -1) {
+            const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+            return callback(new Error(msg), false);
+        }
+        return callback(null, true);
+    },
     credentials: true
 }));
 
