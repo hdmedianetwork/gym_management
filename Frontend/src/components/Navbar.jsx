@@ -22,21 +22,28 @@ const Navbar = () => {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const profileDropdown = (user || isAdmin) && (false);
 
   useEffect(() => {
     // Load user data from localStorage
     const userData = localStorage.getItem('user');
+    const adminStatus = localStorage.getItem('isAdmin') === 'true';
+    
     if (userData) {
       setUser(JSON.parse(userData));
     }
+    setIsAdmin(adminStatus);
   }, [location]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('isAdmin');
     setUser(null);
-    navigate('/login');
+    setIsAdmin(false);
+    navigate('/');
     setIsProfileOpen(false);
   };
 
@@ -179,7 +186,7 @@ const Navbar = () => {
 
           {/* Profile Section */}
           <div className="flex items-center">
-            {user ? (
+            {user || isAdmin ? (
               <div className="relative">
                 <button
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
@@ -190,7 +197,7 @@ const Navbar = () => {
                     <FiUser className="h-4 w-4 text-white" />
                   </div>
                   <span className="ml-2 text-sm font-medium text-gray-300 hidden md:inline">
-                    {user.name || 'Profile'}
+                    {isAdmin ? 'Admin' : (user?.name || 'Profile')}
                   </span>
                 </button>
 
@@ -203,14 +210,25 @@ const Navbar = () => {
                     role="menu"
                   >
                     <div className="py-1" role="none">
-                      <Link
-                        to="/profile"
-                        className="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
-                        role="menuitem"
-                        onClick={() => setIsProfileOpen(false)}
-                      >
-                        <FiUser className="mr-2" /> Your Profile
-                      </Link>
+                      {isAdmin ? (
+                        <Link
+                          to="/admin"
+                          className="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
+                          role="menuitem"
+                          onClick={() => setIsProfileOpen(false)}
+                        >
+                          <FiUser className="mr-2" /> Admin Dashboard
+                        </Link>
+                      ) : (
+                        <Link
+                          to="/profile"
+                          className="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
+                          role="menuitem"
+                          onClick={() => setIsProfileOpen(false)}
+                        >
+                          <FiUser className="mr-2" /> Your Profile
+                        </Link>
+                      )}
                       <Link
                         to="/settings"
                         className="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
@@ -231,18 +249,18 @@ const Navbar = () => {
                 )}
               </div>
             ) : (
-              <div className="flex space-x-4">
+              <div className="hidden md:flex items-center space-x-4">
                 <Link
                   to="/login"
-                  className="text-gray-300 hover:bg-gray-800 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
-                  Sign in
+                  Sign In
                 </Link>
                 <Link
                   to="/signup"
-                  className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-md text-sm font-medium"
+                  className="px-4 py-2 text-sm font-medium text-blue-700 bg-white border border-blue-300 rounded-md hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
-                  Sign up
+                  Sign Up
                 </Link>
               </div>
             )}

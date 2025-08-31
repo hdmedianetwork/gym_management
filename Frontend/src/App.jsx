@@ -9,13 +9,14 @@ import OtpVerification from './auth/OtpVerification';
 import ContactUs from './pages/ContactUs';
 import Navbar from './components/Navbar';
 import AdminHome from './Admin/AdminHome';
+import AdminLogin from './auth/AdminLogin';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
 
 function AppContent() {
   const location = useLocation();
-  const hideNavbarPaths = ['/login', '/signup', '/verify-otp'];
+  const hideNavbarPaths = ['/login', '/signup', '/verify-otp', '/adminlogin'];
   const showNavbar = !hideNavbarPaths.includes(location.pathname);
   
   return (
@@ -28,20 +29,16 @@ function AppContent() {
           <Route path="/" element={<Home />} />
           <Route path="/home" element={<Home />} />
           <Route path="/contact" element={<ContactUs />} />
-          
+
           {/* Auth Routes - Only accessible when not authenticated */}
-          <Route element={<ProtectedRoute requireAuth={false} />}>
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<SignUp />} />
-            <Route path="/verify-otp" element={<OtpVerification />} />
-          </Route>
-          
+          <Route path="/login" element={<ProtectedRoute requireAuth={false}><Login /></ProtectedRoute>} />
+          <Route path="/signup" element={<ProtectedRoute requireAuth={false}><SignUp /></ProtectedRoute>} />
+          <Route path="/verify-otp" element={<ProtectedRoute requireAuth={false}><OtpVerification /></ProtectedRoute>} />
+          <Route path="/adminlogin" element={<ProtectedRoute requireAuth={false}><AdminLogin /></ProtectedRoute>} />
+
           {/* Protected Routes - Only accessible when authenticated */}
-          <Route element={<ProtectedRoute requireAuth={true} />}>
-            <Route path="/dashboard" element={<div>Dashboard</div>} />
-            <Route path="/admin" element={<AdminHome />} />
-          </Route>
-          
+          <Route path="/admin" element={<ProtectedRoute requireAuth={true}><AdminHome /></ProtectedRoute>} />
+
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>

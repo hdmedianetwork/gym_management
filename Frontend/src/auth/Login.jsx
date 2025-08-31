@@ -6,6 +6,7 @@ import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 const Login = () => {
+
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -18,35 +19,52 @@ const Login = () => {
     });
   };
 
-  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     if (!formData.email || !formData.password) {
       toast.error('Please fill in all fields');
       return;
     }
-
     try {
       setIsLoading(true);
       const response = await login(formData.email, formData.password);
-      
       if (response.token) {
-        // Save token and user data to localStorage
         localStorage.setItem('token', response.token);
         if (response.user) {
           localStorage.setItem('user', JSON.stringify(response.user));
         }
         toast.success('Login successful!');
-        // Redirect to dashboard or home page after successful login
         navigate('/home');
       }
     } catch (error) {
       toast.error(error.message || 'Login failed. Please try again.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Admin login modal logic
+  const handleAdminVerify = async (e) => {
+    e.preventDefault();
+    if (!adminEmail) {
+      toast.error('Please enter admin email');
+      return;
+    }
+    try {
+      setAdminLoading(true);
+      // Here you can add actual admin verification logic
+      // For now, just navigate to /admin
+      toast.success('Admin verified!');
+      setShowAdminModal(false);
+      navigate('/admin');
+    } catch (error) {
+      toast.error('Admin verification failed');
+    } finally {
+      setAdminLoading(false);
     }
   };
 
@@ -121,6 +139,11 @@ const Login = () => {
                 ) : 'Sign In'}
               </button>
             </form>
+
+            {/* Login as admin link */}
+            <div className="mt-2 text-center">
+              <Link to="/adminlogin" className="text-xs text-blue-300 hover:text-blue-400 underline">Login as admin</Link>
+            </div>
 
             <div className="mt-6 text-center">
               <p className="text-gray-400">

@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 const ProtectedRoute = ({ children, requireAuth = true }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
@@ -15,10 +16,11 @@ const ProtectedRoute = ({ children, requireAuth = true }) => {
       } catch (error) {
         setIsAuthenticated(false);
       } finally {
+        // Check admin flag in localStorage
+        setIsAdmin(localStorage.getItem('isAdmin') === 'true');
         setIsLoading(false);
       }
     };
-
     checkAuth();
   }, []);
 
@@ -26,13 +28,21 @@ const ProtectedRoute = ({ children, requireAuth = true }) => {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
 
-  // If route requires authentication but user is not authenticated
-  if (requireAuth && !isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+  // Handle admin authentication
+  if (requireAuth) {
+    // Allow access if user is authenticated or is an admin on admin route
+    if (!isAuthenticated && !isAdmin) {
+      return <Navigate to="/login" state={{ from: location }} replace />;
+    }
+    
+    // If trying to access admin routes, ensure user is admin
+    if (location.pathname.startsWith('/admin') && !isAdmin) {
+      return <Navigate to="/" replace />;
+    }
   }
 
   // If route is auth route (login/signup) but user is authenticated
-  if (!requireAuth && isAuthenticated) {
+  if (!requireAuth && (isAuthenticated || isAdmin)) {
     return <Navigate to="/home" replace />;
   }
 
