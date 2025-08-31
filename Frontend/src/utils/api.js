@@ -1,5 +1,24 @@
 const API_URL = 'http://localhost:5000/api';
-
+export const getAllUsers = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/auth/admin/all-users`, {
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : undefined,
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to fetch users');
+    }
+    return data;
+  } catch (error) {
+    console.error('Get all users error:', error);
+    throw error;
+  }
+};
 export const login = async (email, password) => {
   try {
     const response = await fetch(`${API_URL}/auth/login`, {

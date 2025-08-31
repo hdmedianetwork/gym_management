@@ -7,6 +7,16 @@ import { generateOTP, sendOTP } from "../utils/emailService.js";
 
 const router = express.Router();
 
+// Get all users for admin dashboard
+router.get("/admin/all-users", async (req, res) => {
+  try {
+    const users = await User.find({});
+    res.json({ users });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Check admin email
 router.post("/check-admin-email", async (req, res) => {
   try {
@@ -208,10 +218,13 @@ router.post("/verify-otp", async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Update user with verified status and clear OTP
-    user.name = name;
+    user.name = name.trim();
     user.password = hashedPassword;
-    user.mobile = mobile;
+    user.mobile = mobile.trim();
     user.isVerified = true;
+    user.accountStatus = 'inactive';
+    user.planType = 'no plan';
+    user.paymentStatus = 'unpaid';
     user.otp = undefined;
     user.otpExpires = undefined;
     

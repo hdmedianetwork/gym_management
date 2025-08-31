@@ -1,21 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { getAllUsers } from '../utils/api';
 import { Card, Table, Modal } from 'antd';
 import { UserOutlined, ClockCircleOutlined, StopOutlined, CloseOutlined } from '@ant-design/icons';
 
-// Mock data for demonstration
-const usersData = {
-  active: [
-    { id: 1, name: 'John Doe', email: 'john@example.com', phone: '123-456-7890', joinDate: '2023-01-15', endDate: '2023-12-31', planType: 'Premium', paymentStatus: 'Paid' },
-    { id: 2, name: 'Jane Smith', email: 'jane@example.com', phone: '234-567-8901', joinDate: '2023-02-20', endDate: '2023-11-30', planType: 'Basic', paymentStatus: 'Expiring' },
-  ],
-  expiring: [
-    { id: 3, name: 'Mike Johnson', email: 'mike@example.com', phone: '345-678-9012', joinDate: '2022-11-10', endDate: '2023-09-30', planType: 'Premium', paymentStatus: 'Paid' },
-    { id: 4, name: 'Sarah Williams', email: 'sarah@example.com', phone: '456-789-0123', joinDate: '2023-01-05', endDate: '2023-10-01', planType: 'Standard', paymentStatus: 'Expiring' },
-  ],
-  suspended: [
-    { id: 5, name: 'David Brown', email: 'david@example.com', phone: '567-890-1234', endDate: '2023-08-20', planType: 'Basic', paymentStatus: 'suspended' },
-    { id: 6, name: 'Emma Davis', email: 'emma@example.com', phone: '678-901-2345', endDate: '2023-08-15', planType: 'Premium', paymentStatus: 'suspended' },
-  ]
+// Helper to categorize users
+const categorizeUsers = (users) => {
+  const now = new Date();
+  const expiringThreshold = new Date(now.getTime() + 10 * 24 * 60 * 60 * 1000); // 10 days from now
+  const active = [];
+  const expiring = [];
+  const suspended = [];
+  users.forEach(user => {
+    // Normalize status fields
+    const status = (user.accountStatus || '').toLowerCase();
+    const payment = (user.paymentStatus || '').toLowerCase();
+    // Expiry logic
+    let endDate = user.endDate || user.expiryDate || user.membershipEndDate;
+    if (endDate) endDate = new Date(endDate);
+    // Suspended
+    if (status === 'suspended' || payment === 'suspended') {
+      suspended.push(user);
+    } else if (endDate && endDate <= expiringThreshold && endDate > now && status !== 'suspended') {
+      expiring.push(user);
+    } else {
+      active.push(user);
+    }
+  });
+  return { active, expiring, suspended };
 };
 const columns = {
   active: [
@@ -24,17 +35,25 @@ const columns = {
     { 
       title: 'Account Status', 
       key: 'status',
-      render: (_, record) => (
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-          record.paymentStatus === 'active' ? 'bg-green-100 text-green-800' :
-          record.paymentStatus === 'expiring' ? 'bg-yellow-100 text-yellow-800' :
-          'bg-red-100 text-red-800'
-        }`}>
-          {record.paymentStatus.charAt(0).toUpperCase() + record.paymentStatus.slice(1)}
-        </span>
-      )
+      render: (_, record) => {
+        const status = (record.accountStatus || '').toLowerCase();
+        let colorClass = 'bg-gray-100 text-gray-800';
+        if (status === 'active') colorClass = 'bg-green-100 text-green-800';
+        else if (status === 'expiring') colorClass = 'bg-yellow-100 text-yellow-800';
+        else if (status === 'suspended') colorClass = 'bg-red-100 text-red-800';
+        return (
+          <span className={`px-2 py-1 rounded-full text-xs font-medium ${colorClass}`}>
+            {status.charAt(0).toUpperCase() + status.slice(1) || 'Unknown'}
+          </span>
+        );
+      }
     },
-    { title: 'Phone', dataIndex: 'phone', key: 'phone' },
+    { 
+      title: 'Phone', 
+      dataIndex: 'mobile', 
+      key: 'mobile',
+      render: (mobile, record) => record.mobile || record.phone || 'N/A'
+    },
     { title: 'Plan Type', dataIndex: 'planType', key: 'planType' },
     { 
       title: 'Payment Status', 
@@ -55,7 +74,12 @@ const columns = {
   expiring: [
     { title: 'Name', dataIndex: 'name', key: 'name' },
     { title: 'Email', dataIndex: 'email', key: 'email' },
-    { title: 'Phone', dataIndex: 'phone', key: 'phone' },
+    { 
+      title: 'Phone', 
+      dataIndex: 'mobile', 
+      key: 'mobile',
+      render: (mobile, record) => record.mobile || record.phone || 'N/A'
+    },
     { title: 'Plan Type', dataIndex: 'planType', key: 'planType' },
     { 
       title: 'Payment Status', 
@@ -77,7 +101,12 @@ const columns = {
   suspended: [
     { title: 'Name', dataIndex: 'name', key: 'name' },
     { title: 'Email', dataIndex: 'email', key: 'email' },
-    { title: 'Phone', dataIndex: 'phone', key: 'phone' },
+    { 
+      title: 'Phone', 
+      dataIndex: 'mobile', 
+      key: 'mobile',
+      render: (mobile, record) => record.mobile || record.phone || 'N/A'
+    },
     { title: 'Plan Type', dataIndex: 'planType', key: 'planType' },
     { 
       title: 'Payment Status', 
@@ -98,15 +127,32 @@ const columns = {
   ]
 };
 
+
 const Home = () => {
   const [activeTab, setActiveTab] = useState('active');
-  const [tableData, setTableData] = useState(usersData.active);
-  const [filteredData, setFilteredData] = useState(usersData.active);
+  const [usersData, setUsersData] = useState({ active: [], expiring: [], suspended: [] });
+  const [tableData, setTableData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
   const [tableColumns, setTableColumns] = useState(columns.active);
   const [tableTitle, setTableTitle] = useState('');
   const [searchText, setSearchText] = useState('');
   const [selectedUser, setSelectedUser] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const res = await getAllUsers();
+        const categorized = categorizeUsers(res.users || []);
+        setUsersData(categorized);
+        setTableData(categorized.active);
+        setFilteredData(categorized.active);
+      } catch (err) {
+        console.error('Failed to fetch users:', err);
+      }
+    };
+    fetchUsers();
+  }, []);
 
   const handleSearch = (value) => {
     setSearchText(value);
@@ -217,7 +263,7 @@ const Home = () => {
             </div>
             <div>
               <h3 className="text-gray-700 font-medium">Total Users</h3>
-              <p className="text-2xl font-bold text-gray-900">{usersData.active.length}</p>
+                <p className="text-2xl font-bold text-gray-900">{usersData.active.length}</p>
             </div>
           </div>
         </Card>
@@ -233,7 +279,7 @@ const Home = () => {
             </div>
             <div>
               <h3 className="text-gray-700 font-medium">Expiring Soon (10 days)</h3>
-              <p className="text-2xl font-bold text-gray-900">{usersData.expiring.length}</p>
+                <p className="text-2xl font-bold text-gray-900">{usersData.expiring.length}</p>
             </div>
           </div>
         </Card>
@@ -319,7 +365,7 @@ const Home = () => {
             <Table 
               columns={tableColumns} 
               dataSource={filteredData} 
-              rowKey="id"
+              rowKey="_id"
               onRow={(record) => ({
                 onClick: () => handleRowClick(record),
                 className: 'cursor-pointer hover:bg-gray-50'
