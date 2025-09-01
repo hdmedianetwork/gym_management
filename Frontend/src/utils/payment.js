@@ -1,15 +1,23 @@
 // Utility to create Cashfree payment session via backend
 const getApiBase = () => {
-  const envUrl = import.meta.env.VITE_API_URL;
+  const envUrl = (import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || '').trim();
+
+  // If an env URL is provided, always use it (works for production & staging)
+  if (envUrl) {
+    return envUrl.replace(/\/$/, '');
+  }
+
+  // In development, prefer local backend
   if (typeof window !== 'undefined') {
     const host = window.location.hostname;
-    // Force localhost backend when frontend is running locally
-    if (host === 'localhost' || host === '127.0.0.1') {
-      return 'http://localhost:5000';
-    }
+    const isLocal = import.meta.env.DEV || host === 'localhost' || host === '127.0.0.1';
+    if (isLocal) return 'http://localhost:5000';
+    // Otherwise default to same origin in environments without explicit backend URL
+    return window.location.origin;
   }
-  // Prefer configured env URL; otherwise use current origin
-  return envUrl || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5000');
+
+  // Fallback for non-browser contexts
+  return 'http://localhost:5000';
 };
 
 export async function createCashfreeSession({ orderId, orderAmount, customerName, customerEmail, customerPhone, returnUrl }) {

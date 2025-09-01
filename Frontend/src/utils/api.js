@@ -1,8 +1,20 @@
-const API_URL = import.meta.env.VITE_API_URL;
+const getApiBase = () => {
+  const envUrl = (import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || '').trim();
+  if (envUrl) return envUrl.replace(/\/$/, '');
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    const isLocal = import.meta.env.DEV || host === 'localhost' || host === '127.0.0.1';
+    if (isLocal) return 'http://localhost:5000';
+    return window.location.origin;
+  }
+  return 'http://localhost:5000';
+};
+const API_BASE = getApiBase();
+
 export const getAllUsers = async () => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${API_URL}/api/auth/admin/all-users`, {
+    const response = await fetch(`${API_BASE}/api/auth/admin/all-users`, {
       headers: {
         'Authorization': token ? `Bearer ${token}` : undefined,
         'Content-Type': 'application/json',
@@ -19,9 +31,10 @@ export const getAllUsers = async () => {
     throw error;
   }
 };
+
 export const login = async (email, password) => {
   try {
-    const response = await fetch(`${API_URL}/api/auth/login`, {
+    const response = await fetch(`${API_BASE}/api/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -49,7 +62,7 @@ export const login = async (email, password) => {
 
 export const register = async (name, email, mobile, password) => {
   try {
-    const response = await fetch(`${API_URL}/api/auth/register`, {
+    const response = await fetch(`${API_BASE}/api/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -71,7 +84,7 @@ export const register = async (name, email, mobile, password) => {
 
 export const sendOTP = async (email) => {
   try {
-    const response = await fetch(`${API_URL}/api/auth/send-otp`, {
+    const response = await fetch(`${API_BASE}/api/auth/send-otp`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -98,7 +111,7 @@ export const verifyOTP = async (email, otp, name = '', mobile = '', password = '
     if (mobile) requestBody.mobile = mobile;
     if (password) requestBody.password = password;
     
-    const response = await fetch(`${API_URL}/api/auth/verify-otp`, {
+    const response = await fetch(`${API_BASE}/api/auth/verify-otp`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -122,7 +135,7 @@ export const getCurrentUser = async () => {
     const token = localStorage.getItem('token');
     if (!token) return null;
     
-    const response = await fetch(`${API_URL}/api/auth/me`, {
+    const response = await fetch(`${API_BASE}/api/auth/me`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -145,7 +158,7 @@ export const getCurrentUser = async () => {
 export const getSuccessfulPayments = async () => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${API_URL}/api/payment/all-transactions`, {
+    const response = await fetch(`${API_BASE}/api/payment/all-transactions`, {
       headers: {
         'Authorization': token ? `Bearer ${token}` : undefined,
         'Content-Type': 'application/json',
@@ -168,7 +181,7 @@ export const getSuccessfulPayments = async () => {
 export const syncUsersWithPayments = async () => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${API_URL}/api/payment/sync-users`, {
+    const response = await fetch(`${API_BASE}/api/payment/sync-users`, {
       method: 'POST',
       headers: {
         'Authorization': token ? `Bearer ${token}` : undefined,
@@ -185,6 +198,75 @@ export const syncUsersWithPayments = async () => {
     return data;
   } catch (error) {
     console.error('Sync users error:', error);
+    throw error;
+  }
+};
+
+export const updateUserStatus = async (userId, accountStatus) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE}/api/auth/admin/users/${userId}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : undefined,
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({ accountStatus })
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to update user status');
+    }
+    return data;
+  } catch (error) {
+    console.error('Update user status error:', error);
+    throw error;
+  }
+};
+
+export const createUserManually = async (payload) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE}/api/auth/admin/users`, {
+      method: 'POST',
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : undefined,
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to create user');
+    }
+    return data;
+  } catch (error) {
+    console.error('Create user error:', error);
+    throw error;
+  }
+};
+
+export const updateUserDetails = async (id, updates) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE}/api/auth/admin/users/${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : undefined,
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(updates)
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to update user details');
+    }
+    return data;
+  } catch (error) {
+    console.error('Update user details error:', error);
     throw error;
   }
 };

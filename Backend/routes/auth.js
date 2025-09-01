@@ -296,4 +296,125 @@ router.get("/me", async (req, res) => {
   }
 });
 
+// Admin: update user account status (e.g., terminate)
+router.patch("/admin/users/:id/status", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { accountStatus } = req.body;
+
+    const allowed = ['active', 'inactive', 'suspended', 'terminated'];
+    if (!allowed.includes((accountStatus || '').toLowerCase())) {
+      return res.status(400).json({ error: 'Invalid accountStatus value' });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      id,
+      { accountStatus: accountStatus.toLowerCase() },
+      { new: true }
+    );
+
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    res.json({ success: true, user });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Admin: manually create a user
+router.post('/admin/users', async (req, res) => {
+  try {
+    const { name, email, mobile, accountStatus, planAmount, paymentStatus } = req.body;
+
+    if (!name || !email || !mobile) {
+      return res.status(400).json({ error: 'name, email and mobile are required' });
+    }
+
+    const statusAllowed = ['active', 'inactive', 'suspended', 'terminated'];
+    const payAllowed = ['paid', 'unpaid', 'pending'];
+
+    const normalizedStatus = (accountStatus || 'inactive').toLowerCase();
+    const normalizedPay = (paymentStatus || 'unpaid').toLowerCase();
+
+    if (!statusAllowed.includes(normalizedStatus)) {
+      return res.status(400).json({ error: 'Invalid accountStatus' });
+    }
+    if (!payAllowed.includes(normalizedPay)) {
+      return res.status(400).json({ error: 'Invalid paymentStatus' });
+    }
+
+    const exists = await User.findOne({ email: email.trim().toLowerCase() });
+    if (exists) {
+      return res.status(409).json({ error: 'User with this email already exists' });
+    }
+
+    // Temporary password strategy: last 6 digits of mobile or a random fallback
+    const tempPassword = (String(mobile).replace(/\D/g, '').slice(-6)) || Math.random().toString(36).slice(-8);
+    const hashedPassword = await bcrypt.hash(tempPassword, 10);
+
+    const user = await User.create({
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      password: hashedPassword,
+      mobile: String(mobile).trim(),
+      isVerified: true,
+      accountStatus: normalizedStatus,
+      planType: 'manual',
+      planAmount: Number(planAmount) || 0,
+      paymentStatus: normalizedPay,
+      otp: undefined,
+      otpExpires: undefined,
+    });
+
+    return res.status(201).json({ success: true, user });
+  } catch (err) {
+    console.error('Admin create user error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// Admin: update user details (conditional fields)
+router.patch('/admin/users/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const isManual = (user.planType || '').toLowerCase() === 'manual';
+
+    // Whitelists
+    const manualAllowed = ['name', 'email', 'mobile', 'accountStatus', 'paymentStatus', 'planAmount'];
+    const signupAllowed = ['name', 'email', 'mobile'];
+    const allowed = isManual ? manualAllowed : signupAllowed;
+
+    // Build update object
+    const update = {};
+    for (const key of allowed) {
+      if (key in req.body) update[key] = req.body[key];
+    }
+
+    // Normalize specific fields
+    if ('email' in update) update.email = String(update.email).trim().toLowerCase();
+    if ('accountStatus' in update) update.accountStatus = String(update.accountStatus).toLowerCase();
+    if ('paymentStatus' in update) update.paymentStatus = String(update.paymentStatus).toLowerCase();
+    if ('planAmount' in update) update.planAmount = Number(update.planAmount) || 0;
+
+    // Validate enum fields when present
+    const statusAllowed = ['active', 'inactive', 'suspended', 'terminated'];
+    const payAllowed = ['paid', 'unpaid', 'pending'];
+    if (update.accountStatus && !statusAllowed.includes(update.accountStatus)) {
+      return res.status(400).json({ error: 'Invalid accountStatus' });
+    }
+    if (update.paymentStatus && !payAllowed.includes(update.paymentStatus)) {
+      return res.status(400).json({ error: 'Invalid paymentStatus' });
+    }
+
+    const updated = await User.findByIdAndUpdate(id, update, { new: true });
+    return res.json({ success: true, user: updated, editableFields: allowed });
+  } catch (err) {
+    console.error('Admin update user error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;

@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { getAllUsers, getSuccessfulPayments, syncUsersWithPayments } from '../utils/api';
+import { getAllUsers, getSuccessfulPayments, syncUsersWithPayments, updateUserStatus } from '../utils/api';
 import { Card, Table, Modal } from 'antd';
 import { UserOutlined, ClockCircleOutlined, StopOutlined, CloseOutlined } from '@ant-design/icons';
+import TerminatedUsers from './TerminatedUsers';
+import AddUserModal from './AddUserModal';
+import EditUserModal from './EditUserModal';
 
 // Helper to categorize users
 const categorizeUsers = (users) => {
@@ -10,6 +13,7 @@ const categorizeUsers = (users) => {
   const active = [];
   const expiring = [];
   const suspended = [];
+  const terminated = [];
   users.forEach(user => {
     // Normalize status fields
     const status = (user.accountStatus || '').toLowerCase();
@@ -18,7 +22,9 @@ const categorizeUsers = (users) => {
     let endDate = user.endDate || user.expiryDate || user.membershipEndDate;
     if (endDate) endDate = new Date(endDate);
     // Suspended
-    if (status === 'suspended' || payment === 'suspended') {
+    if (status === 'terminated') {
+      terminated.push(user);
+    } else if (status === 'suspended' || payment === 'suspended') {
       suspended.push(user);
     } else if (endDate && endDate <= expiringThreshold && endDate > now && status !== 'suspended') {
       expiring.push(user);
@@ -26,11 +32,22 @@ const categorizeUsers = (users) => {
       active.push(user);
     }
   });
-  return { active, expiring, suspended };
+  return { active, expiring, suspended, terminated };
 };
+
 const columns = {
   active: [
     { title: 'Name', dataIndex: 'name', key: 'name' },
+    { 
+      title: 'Source', 
+      key: 'source',
+      render: (_, record) => {
+        const isManual = (record.planType || '').toLowerCase() === 'manual';
+        return isManual ? (
+          <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">Manual</span>
+        ) : null;
+      }
+    },
     { title: 'Email', dataIndex: 'email', key: 'email' },
     { 
       title: 'Account Status', 
@@ -85,6 +102,16 @@ const columns = {
   ],
   expiring: [
     { title: 'Name', dataIndex: 'name', key: 'name' },
+    { 
+      title: 'Source', 
+      key: 'source',
+      render: (_, record) => {
+        const isManual = (record.planType || '').toLowerCase() === 'manual';
+        return isManual ? (
+          <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">Manual</span>
+        ) : null;
+      }
+    },
     { title: 'Email', dataIndex: 'email', key: 'email' },
     { 
       title: 'Phone', 
@@ -124,6 +151,16 @@ const columns = {
   ],
   suspended: [
     { title: 'Name', dataIndex: 'name', key: 'name' },
+    { 
+      title: 'Source', 
+      key: 'source',
+      render: (_, record) => {
+        const isManual = (record.planType || '').toLowerCase() === 'manual';
+        return isManual ? (
+          <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">Manual</span>
+        ) : null;
+      }
+    },
     { title: 'Email', dataIndex: 'email', key: 'email' },
     { 
       title: 'Phone', 
@@ -166,7 +203,7 @@ const columns = {
 
 const Home = () => {
   const [activeTab, setActiveTab] = useState('active');
-  const [usersData, setUsersData] = useState({ active: [], expiring: [], suspended: [] });
+  const [usersData, setUsersData] = useState({ active: [], expiring: [], suspended: [], terminated: [] });
   const [tableData, setTableData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [tableColumns, setTableColumns] = useState(columns.active);
@@ -176,6 +213,10 @@ const Home = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [paymentsData, setPaymentsData] = useState([]);
+  const [showTerminatedModal, setShowTerminatedModal] = useState(false);
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Helper to format dates consistently
   const formatDate = (date) => {
@@ -212,6 +253,7 @@ const Home = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setIsLoading(true);
         // Fetch both users and payments
         const [usersRes, paymentsRes] = await Promise.all([
           getAllUsers(),
@@ -267,6 +309,8 @@ const Home = () => {
         
       } catch (err) {
         console.error('Failed to fetch data:', err);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -305,14 +349,13 @@ const Home = () => {
     setIsModalVisible(true);
   };
 
+  const handleAddMember = () => {
+    setShowAddUserModal(true);
+  };
+
   const handleCloseModal = () => {
     setIsModalVisible(false);
     setSelectedUser(null);
-  };
-
-  const handleAddMember = () => {
-    // Add your add member logic here
-    console.log('Add member clicked');
   };
 
   const handleSyncUsers = async () => {
@@ -339,29 +382,7 @@ const Home = () => {
         }
         
         // Refresh users and payments, then merge (same as initial load)
-        const [usersRes, paymentsRes] = await Promise.all([
-          getAllUsers(),
-          getSuccessfulPayments()
-        ]);
-
-        let users = usersRes.users || [];
-        let payments = [];
-
-        if (paymentsRes.success && paymentsRes.transactions && paymentsRes.transactions.length > 0) {
-          payments = paymentsRes.transactions.filter(t => {
-            const s = t.orderStatus?.toLowerCase();
-            return s === 'paid' || s === 'success';
-          });
-          setPaymentsData(payments);
-        }
-
-        const mergedUsers = mergeUsersWithPayments(users, payments);
-        const categorized = categorizeUsers(mergedUsers);
-        setUsersData(categorized);
-
-        const currentData = categorized[activeTab] || [];
-        setTableData(currentData);
-        setFilteredData(currentData);
+        await refreshUsers();
          
         alert(`Sync completed! ${syncResult.updatedUsers.length} users updated. Check console for details.`);
       }
@@ -373,8 +394,69 @@ const Home = () => {
     }
   };
 
+  const handleOpenTerminated = () => {
+    setShowTerminatedModal(true);
+  };
+
+  const handleTerminateUser = async () => {
+    if (!selectedUser?._id) return;
+    try {
+      // Confirm action
+      if (!confirm(`Terminate ${selectedUser.name}'s account?`)) return;
+      await updateUserStatus(selectedUser._id, 'terminated');
+
+      // Refetch users and payments, re-merge and update state
+      await refreshUsers();
+      // Close the details modal
+      setIsModalVisible(false);
+      setSelectedUser(null);
+
+      // Show terminated list modal for quick review
+      setShowTerminatedModal(true);
+    } catch (err) {
+      alert('Failed to terminate user: ' + err.message);
+    }
+  };
+
+  // Reusable: refetch users and payments, merge, and update state
+  const refreshUsers = async () => {
+    const [usersRes, paymentsRes] = await Promise.all([
+      getAllUsers(),
+      getSuccessfulPayments()
+    ]);
+
+    let users = usersRes.users || [];
+    let payments = [];
+    if (paymentsRes.success && paymentsRes.transactions && paymentsRes.transactions.length > 0) {
+      payments = paymentsRes.transactions.filter(t => {
+        const s = t.orderStatus?.toLowerCase();
+        return s === 'paid' || s === 'success';
+      });
+      setPaymentsData(payments);
+    }
+
+    const mergedUsers = mergeUsersWithPayments(users, payments);
+    const categorized = categorizeUsers(mergedUsers);
+    setUsersData(categorized);
+
+    const currentData = categorized[activeTab] || [];
+    setTableData(currentData);
+    setFilteredData(currentData);
+  };
+
   return (
     <div className="p-5 max-w-7xl mx-auto">
+      {isLoading && (
+        <div className="fixed inset-0 z-50 bg-black/10 backdrop-blur-sm flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3 bg-white/80 rounded-lg p-6 shadow">
+            <svg className="animate-spin h-8 w-8 text-blue-600" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p className="text-sm text-gray-700">Loading users...</p>
+          </div>
+        </div>
+      )}
       <h1 className="text-2xl font-bold mb-4 sm:mb-8 text-white">Dashboard</h1>
       
       {/* Mobile View - Tabs */}
@@ -464,7 +546,7 @@ const Home = () => {
         <div className="relative">
           <div className="absolute -top-8 sm:-top-20 right-0">
             <button
-              onClick={() => console.log('Terminated Users clicked')}
+              onClick={() => setShowTerminatedModal(true)}
               className="text-xs sm:text-sm text-red-600 hover:text-red-700 hover:underline font-medium whitespace-nowrap"
             >
               Terminated Users
@@ -598,7 +680,7 @@ const Home = () => {
                 </div>
                 <div className="relative">
                   <button 
-                    onClick={() => console.log('Edit user:', selectedUser.id)}
+                    onClick={() => setShowEditModal(true)}
                     className="absolute -right-8 top-0 text-gray-400 hover:text-blue-600 p-1 transition-colors"
                     title="Edit Profile"
                   >
@@ -642,10 +724,7 @@ const Home = () => {
                   View Payment History
                 </button>
                 <button 
-                  onClick={() => {
-                    console.log('Terminate user:', selectedUser.id);
-                    // Add your termination logic here
-                  }}
+                  onClick={handleTerminateUser}
                   className="p-2 text-red-600 border border-red-200 hover:bg-red-50 rounded-full transition-colors"
                   title="Terminate Account"
                 >
@@ -657,6 +736,49 @@ const Home = () => {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* Edit User Modal */}
+      <EditUserModal
+        visible={showEditModal}
+        user={selectedUser}
+        onCancel={() => setShowEditModal(false)}
+        onSuccess={async () => {
+          await refreshUsers();
+          setShowEditModal(false);
+          setIsModalVisible(false);
+        }}
+      />
+
+      {/* Terminated Users Modal */}
+      <Modal
+        title="Terminated Users"
+        open={showTerminatedModal}
+        onCancel={() => setShowTerminatedModal(false)}
+        footer={null}
+        width={700}
+        className="[&_.ant-modal-content]:p-0 [&_.ant-modal-header]:p-4 [&_.ant-modal-header]:border-b [&_.ant-modal-header]:border-gray-200 [&_.ant-modal-body]:p-6"
+      >
+        <TerminatedUsers users={usersData.terminated} onReinstate={refreshUsers} />
+      </Modal>
+
+      {/* Add User Modal */}
+      <Modal
+        title="Add User"
+        open={showAddUserModal}
+        onCancel={() => setShowAddUserModal(false)}
+        footer={null}
+        width={600}
+        className="[&_.ant-modal-content]:p-0 [&_.ant-modal-header]:p-4 [&_.ant-modal-header]:border-b [&_.ant-modal-header]:border-gray-200 [&_.ant-modal-body]:p-6"
+        destroyOnClose
+      >
+        <AddUserModal 
+          onCancel={() => setShowAddUserModal(false)} 
+          onSuccess={async () => { 
+            await refreshUsers(); 
+            setShowAddUserModal(false); 
+          }} 
+        />
       </Modal>
     </div>
   );
