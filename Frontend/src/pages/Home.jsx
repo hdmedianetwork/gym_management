@@ -2,8 +2,21 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { fadeIn, staggerContainer } from '../utils/motion';
+import { createCashfreeSession } from '../utils/payment';
 import { FiAlertTriangle, FiStar, FiCheckCircle } from 'react-icons/fi';
 import Navbar from '../components/Navbar';
+
+// Cashfree script loader (v3)
+const loadCashfreeScript = () => {
+  if (!document.getElementById('cashfree-script')) {
+    const script = document.createElement('script');
+    script.id = 'cashfree-script';
+    // Use v3 SDK per Cashfree docs
+    script.src = 'https://sdk.cashfree.com/js/v3/cashfree.js';
+    script.async = true;
+    document.body.appendChild(script);
+  }
+};
 
 const Home = () => {
   const navigate = useNavigate();
@@ -74,15 +87,71 @@ const Home = () => {
     if (userData) {
       setUser(JSON.parse(userData));
     }
+    loadCashfreeScript();
   }, []);
 
-  const handleSubscribe = (plan) => {
+  const handleSubscribe = async (plan) => {
+    if (!user) {
+      // Not authenticated, redirect to login
+      navigate('/login');
+      return;
+    }
     setSelectedPlan(plan);
-    // In a real app, you would handle the subscription logic here
-    setTimeout(() => {
-      setIsSubscribed(true);
-      setSelectedPlan(null);
-    }, 2000);
+    
+    // Load Cashfree script if not already loaded
+    loadCashfreeScript();
+
+    // Wait for Cashfree v2 to be available
+    const started = Date.now();
+    const iv = setInterval(async () => {
+      if (typeof window.Cashfree === 'function') {
+        clearInterval(iv);
+        try {
+          // Create payment session from local backend
+          const orderId = 'order_' + Date.now();
+          const orderAmount = Number(plan.price.replace('₹', '').replace(',', '')) || 0;
+          const customerName = user?.name || 'Guest User';
+          const customerEmail = user?.email || 'guest@example.com';
+          const customerPhone = user?.mobile || '9999999999';
+          const returnUrl = window.location.origin + '/payment-status';
+
+          const { paymentSessionId } = await createCashfreeSession({
+            orderId,
+            orderAmount,
+            customerName,
+            customerEmail,
+            customerPhone,
+            returnUrl,
+          });
+
+          if (!paymentSessionId) throw new Error('No paymentSessionId received');
+
+          // v3 initialization (function, not class)
+          const cashfree = window.Cashfree({ mode: 'sandbox' });
+          await cashfree.checkout({
+            paymentSessionId,
+            redirectTarget: '_self',
+            onSuccess: () => {
+              setIsSubscribed(true);
+              setSelectedPlan(null);
+              alert('Payment successful!');
+            },
+            onFailure: (data) => {
+              setSelectedPlan(null);
+              alert('Payment failed! ' + (data?.message || ''));
+            },
+          });
+        } catch (error) {
+          console.error('Cashfree v2 error:', error);
+          setSelectedPlan(null);
+          alert(error?.message || 'Payment service is currently unavailable. Please try again later.');
+        }
+      } else if (Date.now() - started > 8000) {
+        clearInterval(iv);
+        setSelectedPlan(null);
+        alert('Payment service is currently unavailable. Please try again later.');
+      }
+    }, 100);
   };
 
   // Prevent all scrolling by adding a class to the HTML element

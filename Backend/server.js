@@ -5,6 +5,7 @@ import cors from "cors";
 import path from 'path';
 import { fileURLToPath } from 'url';
 import authRoutes from "./routes/auth.js";
+import cashfreeRoutes from "./cashfree/cashfreeRoutes.js";
 
 // Configure environment variables
 const __filename = fileURLToPath(import.meta.url);
@@ -48,17 +49,19 @@ app.use(cors({
 }));
 
 app.get("/",(req,res)=>{
-    res.send("Hello World!")
+  res.send("Hello World!")
 })
 // Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/payment", cashfreeRoutes);
 
 // Connect MongoDB
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log("✅ MongoDB Connected");
-    app.listen(process.env.PORT, () =>
-      console.log(`🚀 Server running on port ${process.env.PORT}`)
+    const port = process.env.PORT || 5000;
+    app.listen(port, () =>
+      console.log(`🚀 Server running on port ${port}`)
     );
   })
   .catch(err => console.error(err));
