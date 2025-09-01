@@ -5,12 +5,28 @@ import Payment from '../models/Payment.js';
 import User from '../models/User.js';
 dotenv.config();
 
+// Cashfree configuration
+const CF_ENV = (process.env.CASHFREE_ENV || 'SANDBOX').toUpperCase(); // 'PROD' or 'SANDBOX'
+const CF_APP_ID = process.env.CASHFREE_APP_ID;
+const CF_SECRET = process.env.CASHFREE_SECRET_KEY;
+const CF_BASE_URL = CF_ENV === 'PROD' ? 'https://api.cashfree.com' : 'https://sandbox.cashfree.com';
+
+// Validate required env vars at startup
+if (!CF_APP_ID || !CF_SECRET) {
+  console.warn('[Cashfree] Missing CASHFREE_APP_ID or CASHFREE_SECRET_KEY. Payments will fail until these are set.');
+}
+
 export const createPaymentSession = async (req, res) => {
   try {
     const { orderId, orderAmount, customerName, customerEmail, customerPhone, userId, planType } = req.body;
     // Cashfree customer_id must be alphanumeric and may contain underscore or hyphens
     const customerId = (customerEmail || `guest_${Date.now()}`).replace(/[^A-Za-z0-9_-]/g, '_');
-    
+
+    // Guard: ensure credentials exist
+    if (!CF_APP_ID || !CF_SECRET) {
+      return res.status(500).json({ error: 'Cashfree credentials not configured' });
+    }
+
     // Save payment record to database
     const paymentRecord = new Payment({
       orderId,
@@ -25,12 +41,12 @@ export const createPaymentSession = async (req, res) => {
       },
       planType
     });
-    
+
     await paymentRecord.save();
     console.log(`💾 Payment record saved for order: ${orderId}`);
-    
+
     // Cashfree API endpoint
-    const url = 'https://sandbox.cashfree.com/pg/orders';
+    const url = `${CF_BASE_URL}/pg/orders`;
     // Prepare payload
     const payload = {
       order_id: orderId,
@@ -46,17 +62,17 @@ export const createPaymentSession = async (req, res) => {
         return_url: req.body.returnUrl || 'https://yourdomain.com/payment-success'
       }
     };
-    
+
     // Make request to Cashfree
     const response = await axios.post(url, payload, {
       headers: {
         'x-api-version': '2022-09-01',
-        'x-client-id': process.env.CASHFREE_APP_ID,
-        'x-client-secret': process.env.CASHFREE_SECRET_KEY,
+        'x-client-id': CF_APP_ID,
+        'x-client-secret': CF_SECRET,
         'Content-Type': 'application/json'
       }
     });
-    
+
     // Update payment record with session ID
     await Payment.findOneAndUpdate(
       { orderId },
@@ -65,12 +81,18 @@ export const createPaymentSession = async (req, res) => {
         cashfreeData: response.data
       }
     );
-    
+
     // Return payment session id
     res.json({ paymentSessionId: response.data.payment_session_id, orderId: response.data.order_id });
   } catch (error) {
-    console.error('Cashfree error:', error.response?.data || error.message);
-    res.status(500).json({ error: error.response?.data || error.message });
+    const status = error.response?.status;
+    const data = error.response?.data;
+    console.error('Cashfree error:', data || error.message);
+    // Provide clearer message for auth issues
+    if (status === 401 || (typeof data === 'object' && (data?.message || '').toLowerCase().includes('authentication'))) {
+      return res.status(500).json({ error: 'Cashfree authentication failed. Check CASHFREE_ENV, CASHFREE_APP_ID and CASHFREE_SECRET_KEY.' });
+    }
+    res.status(500).json({ error: data || error.message });
   }
 };
 
