@@ -23,8 +23,9 @@ const Home = () => {
   const [user, setUser] = React.useState(null);
   const plans = [
     {
-      name: 'Basic',
+      name: 'Starter Plan',
       price: '₹999',
+      amount: 999,
       period: '/month',
       features: [
         'Access to gym floor',
@@ -36,11 +37,12 @@ const Home = () => {
       gradient: 'from-blue-500 to-cyan-400'
     },
     {
-      name: 'Standard',
+      name: 'Growth Plan',
       price: '₹1,999',
+      amount: 1999,
       period: '/month',
       features: [
-        'All Basic features',
+        'All Starter features',
         'Group classes',
         'Sauna access',
         '3 Free Trainings',
@@ -50,16 +52,17 @@ const Home = () => {
       gradient: 'from-purple-600 to-pink-500'
     },
     {
-      name: 'Premium',
+      name: 'Elite Plan',
       price: '₹2,999',
+      amount: 2999,
       period: '/month',
       features: [
-        'All Standard features',
+        'All Growth features',
         '24/7 Access',
         'Personal trainer',
         'Unlimited classes',
         'Massage chair access',
-        'Premium locker'
+        'Elite locker'
       ],
       popular: false,
       gradient: 'from-amber-500 to-orange-500'
@@ -109,7 +112,7 @@ const Home = () => {
         try {
           // Create payment session from local backend
           const orderId = 'order_' + Date.now();
-          const orderAmount = Number(plan.price.replace('₹', '').replace(',', '')) || 0;
+          const orderAmount = plan.amount; // Use the numeric amount directly
           const customerName = user?.name || 'Guest User';
           const customerEmail = user?.email || 'guest@example.com';
           const customerPhone = user?.mobile || '9999999999';
@@ -122,6 +125,8 @@ const Home = () => {
             customerEmail,
             customerPhone,
             returnUrl,
+            planType: plan.name, // Include plan name
+            planAmount: plan.amount, // Include plan amount
           });
 
           if (!paymentSessionId) throw new Error('No paymentSessionId received');

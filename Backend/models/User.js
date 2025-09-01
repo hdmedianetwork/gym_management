@@ -9,7 +9,8 @@ const userSchema = new mongoose.Schema({
   otp: { type: String },
   otpExpires: { type: Date },
   accountStatus: { type: String, default: 'inactive', enum: ['active', 'inactive', 'suspended','terminated'] },
-  planType: { type: String, default: 'no plan',enum: ['no plan','basic', 'standard', 'premium'] },
+  planType: { type: String, default: 'no plan' },
+  planAmount: { type: Number, default: 0 },
   paymentStatus: { type: String, default: 'unpaid', enum: ['paid', 'unpaid', 'pending'] }
 }, { timestamps: true });
 

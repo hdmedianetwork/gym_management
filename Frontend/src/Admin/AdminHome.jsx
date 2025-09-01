@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getAllUsers } from '../utils/api';
+import { getAllUsers, getSuccessfulPayments, syncUsersWithPayments } from '../utils/api';
 import { Card, Table, Modal } from 'antd';
 import { UserOutlined, ClockCircleOutlined, StopOutlined, CloseOutlined } from '@ant-design/icons';
 
@@ -54,7 +54,16 @@ const columns = {
       key: 'mobile',
       render: (mobile, record) => record.mobile || record.phone || 'N/A'
     },
-    { title: 'Plan Type', dataIndex: 'planType', key: 'planType' },
+    { 
+      title: 'Amount Paid', 
+      key: 'planInfo',
+      render: (_, record) => {
+        const orderAmount = record.orderAmount || record.planAmount || 0;
+        return (
+          <span className="font-medium text-gray-900">₹{orderAmount.toLocaleString()}</span>
+        );
+      }
+    },
     { 
       title: 'Payment Status', 
       dataIndex: 'paymentStatus', 
@@ -80,7 +89,16 @@ const columns = {
       key: 'mobile',
       render: (mobile, record) => record.mobile || record.phone || 'N/A'
     },
-    { title: 'Plan Type', dataIndex: 'planType', key: 'planType' },
+    { 
+      title: 'Amount Paid', 
+      key: 'planInfo',
+      render: (_, record) => {
+        const orderAmount = record.orderAmount || record.planAmount || 0;
+        return (
+          <span className="font-medium text-gray-900">₹{orderAmount.toLocaleString()}</span>
+        );
+      }
+    },
     { 
       title: 'Payment Status', 
       dataIndex: 'paymentStatus', 
@@ -107,7 +125,16 @@ const columns = {
       key: 'mobile',
       render: (mobile, record) => record.mobile || record.phone || 'N/A'
     },
-    { title: 'Plan Type', dataIndex: 'planType', key: 'planType' },
+    { 
+      title: 'Amount Paid', 
+      key: 'planInfo',
+      render: (_, record) => {
+        const orderAmount = record.orderAmount || record.planAmount || 0;
+        return (
+          <span className="font-medium text-gray-900">₹{orderAmount.toLocaleString()}</span>
+        );
+      }
+    },
     { 
       title: 'Payment Status', 
       dataIndex: 'paymentStatus', 
@@ -138,20 +165,92 @@ const Home = () => {
   const [searchText, setSearchText] = useState('');
   const [selectedUser, setSelectedUser] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [paymentsData, setPaymentsData] = useState([]);
+
+  // Helper function to merge user data with payment data
+  const mergeUsersWithPayments = (users, payments) => {
+    return users.map(user => {
+      // Find payment for this user by email matching
+      const userPayment = payments.find(payment => 
+        payment.customerDetails?.customer_email?.toLowerCase() === user.email?.toLowerCase()
+      );
+      
+      if (userPayment) {
+        return {
+          ...user,
+          orderAmount: userPayment.orderAmount,
+          paymentOrderId: userPayment.orderId,
+          paymentStatus: userPayment.orderStatus === 'PAID' || userPayment.orderStatus === 'SUCCESS' ? 'Paid' : user.paymentStatus
+        };
+      }
+      
+      return user;
+    });
+  };
 
   useEffect(() => {
-    const fetchUsers = async () => {
+    const fetchData = async () => {
       try {
-        const res = await getAllUsers();
-        const categorized = categorizeUsers(res.users || []);
+        // Fetch both users and payments
+        const [usersRes, paymentsRes] = await Promise.all([
+          getAllUsers(),
+          getSuccessfulPayments()
+        ]);
+        
+        let users = usersRes.users || [];
+        let payments = [];
+        
+        // Process payments data
+        if (paymentsRes.success && paymentsRes.transactions && paymentsRes.transactions.length > 0) {
+          // Filter successful payments
+          payments = paymentsRes.transactions.filter(transaction => {
+            const orderStatus = transaction.orderStatus?.toLowerCase();
+            return orderStatus === 'paid' || orderStatus === 'success';
+          });
+          
+          setPaymentsData(payments);
+          
+          // Log payment data for debugging
+          console.log('\n' + '='.repeat(60));
+          console.log('💰 SUCCESSFUL PAYMENTS DATA');
+          console.log('='.repeat(60));
+          console.log(`📊 Total Payments in Database: ${paymentsRes.transactions.length}`);
+          console.log(`✅ Total Successful Payments: ${payments.length}`);
+          console.log(`💸 Total Successful Amount: ₹${paymentsRes.cashfreeSummary?.totalAmount || 0}`);
+          
+          payments.forEach((payment, index) => {
+            console.log(`--- Payment ${index + 1} ---`);
+            console.log(`👤 Name: ${payment.customerDetails?.customer_name || 'N/A'}`);
+            console.log(`📧 Email: ${payment.customerDetails?.customer_email || 'N/A'}`);
+            console.log(`💰 Amount: ₹${payment.orderAmount}`);
+            console.log(`✅ Status: ${payment.orderStatus}`);
+            console.log('');
+          });
+          console.log('='.repeat(60));
+        }
+        
+        // Merge users with payment data
+        const mergedUsers = mergeUsersWithPayments(users, payments);
+        
+        console.log('\n🔄 MERGED USER DATA:');
+        mergedUsers.forEach(user => {
+          if (user.orderAmount) {
+            console.log(`👤 ${user.name} (${user.email}): ₹${user.orderAmount}`);
+          }
+        });
+        
+        const categorized = categorizeUsers(mergedUsers);
         setUsersData(categorized);
         setTableData(categorized.active);
         setFilteredData(categorized.active);
+        
       } catch (err) {
-        console.error('Failed to fetch users:', err);
+        console.error('Failed to fetch data:', err);
       }
     };
-    fetchUsers();
+
+    fetchData();
   }, []);
 
   const handleSearch = (value) => {
@@ -194,6 +293,49 @@ const Home = () => {
   const handleAddMember = () => {
     // Add your add member logic here
     console.log('Add member clicked');
+  };
+
+  const handleSyncUsers = async () => {
+    setIsSyncing(true);
+    try {
+      console.log('\n' + '='.repeat(60));
+      console.log('🔄 STARTING USER SYNC WITH PAYMENTS');
+      console.log('='.repeat(60));
+      
+      const syncResult = await syncUsersWithPayments();
+      
+      if (syncResult.success) {
+        console.log('\n✅ Sync completed successfully!');
+        console.log(`📊 Total payments processed: ${syncResult.totalPayments}`);
+        console.log(`👥 Users updated: ${syncResult.updatedUsers.length}`);
+        
+        if (syncResult.updatedUsers.length > 0) {
+          console.log('\n📋 Updated users:');
+          syncResult.updatedUsers.forEach(user => {
+            console.log(`👤 ${user.name} (${user.email}): ${user.changes.join(', ')}`);
+          });
+        } else {
+          console.log('ℹ️  No users needed updates');
+        }
+        
+        // Refresh the users data to show updated information
+        const res = await getAllUsers();
+        const categorized = categorizeUsers(res.users || []);
+        setUsersData(categorized);
+        
+        // Update current table based on active tab
+        const currentData = categorized[activeTab] || [];
+        setTableData(currentData);
+        setFilteredData(currentData);
+        
+        alert(`Sync completed! ${syncResult.updatedUsers.length} users updated. Check console for details.`);
+      }
+    } catch (error) {
+      console.error('❌ Sync failed:', error);
+      alert('Sync failed: ' + error.message);
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   return (
@@ -340,6 +482,29 @@ const Home = () => {
                 </svg>
               </div>
               <button 
+                onClick={handleSyncUsers}
+                disabled={isSyncing}
+                className="px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:bg-gray-400 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                title="Sync Users with Payments"
+              >
+                {isSyncing ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Syncing...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Sync Users
+                  </>
+                )}
+              </button>
+              <button 
                 onClick={handleAddMember}
                 className="p-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 title="Add Member"
@@ -415,7 +580,7 @@ const Home = () => {
             
             <div className="grid grid-cols-2 gap-4 pt-2">
               <DetailItem label="Phone" value={selectedUser.phone} />
-              <DetailItem label="Plan Type" value={selectedUser.planType} />
+              <DetailItem label="Amount Paid" value={selectedUser.orderAmount ? `₹${selectedUser.orderAmount.toLocaleString()}` : (selectedUser.planAmount ? `₹${selectedUser.planAmount.toLocaleString()}` : 'N/A')} />
               <DetailItem label="Join Date" value={selectedUser.joinDate || '2023-01-01'} />
               <DetailItem 
                 label={activeTab === 'expiring' ? 'Expiry Date' : 'End Date'} 

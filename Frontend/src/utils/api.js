@@ -141,3 +141,50 @@ export const getCurrentUser = async () => {
     return null;
   }
 };
+
+export const getSuccessfulPayments = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/api/payment/all-transactions`, {
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : undefined,
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    });
+    
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to fetch payments');
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Get payments error:', error);
+    throw error;
+  }
+};
+
+export const syncUsersWithPayments = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/api/payment/sync-users`, {
+      method: 'POST',
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : undefined,
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    });
+    
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to sync users');
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Sync users error:', error);
+    throw error;
+  }
+};
