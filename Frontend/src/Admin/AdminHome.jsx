@@ -68,16 +68,19 @@ const columns = {
       title: 'Payment Status', 
       dataIndex: 'paymentStatus', 
       key: 'paymentStatus',
-      render: (status) => (
-        <span className={`px-2 py-1 rounded-full text-xs ${
-          status === 'Paid' ? 'bg-green-100 text-green-800' :
-          status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-          status === 'Overdue' ? 'bg-red-100 text-red-800' :
-          'bg-gray-100 text-gray-800'
-        }`}>
-          {status}
-        </span>
-      )
+      render: (status) => {
+        const s = (status || '').toLowerCase();
+        const label = s ? s.charAt(0).toUpperCase() + s.slice(1) : 'Unknown';
+        const cls = s === 'paid' ? 'bg-green-100 text-green-800' :
+                    s === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                    s === 'overdue' ? 'bg-red-100 text-red-800' :
+                    'bg-gray-100 text-gray-800';
+        return (
+          <span className={`px-2 py-1 rounded-full text-xs ${cls}`}>
+            {label}
+          </span>
+        );
+      }
     },
   ],
   expiring: [
@@ -103,16 +106,19 @@ const columns = {
       title: 'Payment Status', 
       dataIndex: 'paymentStatus', 
       key: 'paymentStatus',
-      render: (status) => (
-        <span className={`px-2 py-1 rounded-full text-xs ${
-          status === 'Paid' ? 'bg-green-100 text-green-800' :
-          status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-          status === 'Overdue' ? 'bg-red-100 text-red-800' :
-          'bg-gray-100 text-gray-800'
-        }`}>
-          {status}
-        </span>
-      )
+      render: (status) => {
+        const s = (status || '').toLowerCase();
+        const label = s ? s.charAt(0).toUpperCase() + s.slice(1) : 'Unknown';
+        const cls = s === 'paid' ? 'bg-green-100 text-green-800' :
+                    s === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                    s === 'overdue' ? 'bg-red-100 text-red-800' :
+                    'bg-gray-100 text-gray-800';
+        return (
+          <span className={`px-2 py-1 rounded-full text-xs ${cls}`}>
+            {label}
+          </span>
+        );
+      }
     },
     { title: 'End Date', dataIndex: 'endDate', key: 'endDate' },
   ],
@@ -139,16 +145,19 @@ const columns = {
       title: 'Payment Status', 
       dataIndex: 'paymentStatus', 
       key: 'paymentStatus',
-      render: (status) => (
-        <span className={`px-2 py-1 rounded-full text-xs ${
-          status === 'Paid' ? 'bg-green-100 text-green-800' :
-          status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-          status === 'Overdue' ? 'bg-red-100 text-red-800' :
-          'bg-gray-100 text-gray-800'
-        }`}>
-          {status}
-        </span>
-      )
+      render: (status) => {
+        const s = (status || '').toLowerCase();
+        const label = s ? s.charAt(0).toUpperCase() + s.slice(1) : 'Unknown';
+        const cls = s === 'paid' ? 'bg-green-100 text-green-800' :
+                    s === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                    s === 'overdue' ? 'bg-red-100 text-red-800' :
+                    'bg-gray-100 text-gray-800';
+        return (
+          <span className={`px-2 py-1 rounded-full text-xs ${cls}`}>
+            {label}
+          </span>
+        );
+      }
     },
     { title: 'End Date', dataIndex: 'endDate', key: 'endDate' },
   ]
@@ -168,6 +177,14 @@ const Home = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [paymentsData, setPaymentsData] = useState([]);
 
+  // Helper to format dates consistently
+  const formatDate = (date) => {
+    if (!date) return 'N/A';
+    const d = new Date(date);
+    if (isNaN(d)) return 'N/A';
+    return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  };
+
   // Helper function to merge user data with payment data
   const mergeUsersWithPayments = (users, payments) => {
     return users.map(user => {
@@ -181,7 +198,10 @@ const Home = () => {
           ...user,
           orderAmount: userPayment.orderAmount,
           paymentOrderId: userPayment.orderId,
-          paymentStatus: userPayment.orderStatus === 'PAID' || userPayment.orderStatus === 'SUCCESS' ? 'Paid' : user.paymentStatus
+          paymentStatus: userPayment.orderStatus === 'PAID' || userPayment.orderStatus === 'SUCCESS' ? 'Paid' : user.paymentStatus,
+          // New merged fields for overlay
+          paymentPhone: userPayment.customerDetails?.customer_phone || userPayment.customerDetails?.customerPhone,
+          paymentDate: userPayment.paymentCompletedAt || userPayment.updatedAt || userPayment.createdAt
         };
       }
       
@@ -318,16 +338,31 @@ const Home = () => {
           console.log('ℹ️  No users needed updates');
         }
         
-        // Refresh the users data to show updated information
-        const res = await getAllUsers();
-        const categorized = categorizeUsers(res.users || []);
+        // Refresh users and payments, then merge (same as initial load)
+        const [usersRes, paymentsRes] = await Promise.all([
+          getAllUsers(),
+          getSuccessfulPayments()
+        ]);
+
+        let users = usersRes.users || [];
+        let payments = [];
+
+        if (paymentsRes.success && paymentsRes.transactions && paymentsRes.transactions.length > 0) {
+          payments = paymentsRes.transactions.filter(t => {
+            const s = t.orderStatus?.toLowerCase();
+            return s === 'paid' || s === 'success';
+          });
+          setPaymentsData(payments);
+        }
+
+        const mergedUsers = mergeUsersWithPayments(users, payments);
+        const categorized = categorizeUsers(mergedUsers);
         setUsersData(categorized);
-        
-        // Update current table based on active tab
+
         const currentData = categorized[activeTab] || [];
         setTableData(currentData);
         setFilteredData(currentData);
-        
+         
         alert(`Sync completed! ${syncResult.updatedUsers.length} users updated. Check console for details.`);
       }
     } catch (error) {
@@ -455,10 +490,10 @@ const Home = () => {
 
       {activeTab && (
         <div className="bg-white p-3 rounded-lg shadow-md mt-8">
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
             <h2 className="text-xl font-semibold text-gray-800">{tableTitle}</h2>
-            <div className="flex items-center gap-4">
-              <div className="relative w-64">
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+              <div className="relative w-full sm:w-64">
                 <input
                   type="text"
                   placeholder="Search..."
@@ -484,29 +519,28 @@ const Home = () => {
               <button 
                 onClick={handleSyncUsers}
                 disabled={isSyncing}
-                className="px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:bg-gray-400 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-                title="Sync Users with Payments"
+                className="p-2 text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:bg-gray-400 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 shrink-0"
+                title="Sync Users"
+                aria-label="Sync Users"
               >
                 {isSyncing ? (
                   <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" fill="none" viewBox="0 0 24 24">
+                    <svg className="animate-spin h-5 w-5 text-white inline" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    Syncing...
                   </>
                 ) : (
                   <>
-                    <svg className="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
-                    Sync Users
                   </>
                 )}
               </button>
               <button 
                 onClick={handleAddMember}
-                className="p-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                className="p-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shrink-0"
                 title="Add Member"
               >
                 <svg 
@@ -569,7 +603,7 @@ const Home = () => {
                     title="Edit Profile"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                      <path fillRule="evenodd" d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
                     </svg>
                   </button>
                   <h3 className="text-xl font-semibold text-gray-900">{selectedUser.name}</h3>
@@ -579,25 +613,24 @@ const Home = () => {
             </div>
             
             <div className="grid grid-cols-2 gap-4 pt-2">
-              <DetailItem label="Phone" value={selectedUser.phone} />
+              <DetailItem label="Phone" value={selectedUser.mobile || selectedUser.phone || selectedUser.paymentPhone || 'N/A'} />
               <DetailItem label="Amount Paid" value={selectedUser.orderAmount ? `₹${selectedUser.orderAmount.toLocaleString()}` : (selectedUser.planAmount ? `₹${selectedUser.planAmount.toLocaleString()}` : 'N/A')} />
-              <DetailItem label="Join Date" value={selectedUser.joinDate || '2023-01-01'} />
+              <DetailItem label="Join Date" value={formatDate(selectedUser.paymentDate || selectedUser.joinDate || selectedUser.createdAt)} />
               <DetailItem 
                 label={activeTab === 'expiring' ? 'Expiry Date' : 'End Date'} 
                 value={selectedUser.endDate || '2023-12-31'} 
               />
               <DetailItem 
                 label="Payment Status" 
-                value={
-                  <span className={`px-2 py-1 rounded-full text-xs ${
-                    selectedUser.paymentStatus === 'Paid' ? 'bg-green-100 text-green-800' :
-                    selectedUser.paymentStatus === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                    selectedUser.paymentStatus === 'Expiring' ? 'bg-orange-100 text-orange-800' :
-                    'bg-red-100 text-red-800'
-                  }`}>
-                    {selectedUser.paymentStatus}
-                  </span>
-                } 
+                value={(() => {
+                  const s = (selectedUser.paymentStatus || '').toLowerCase();
+                  const label = s ? s.charAt(0).toUpperCase() + s.slice(1) : 'Unknown';
+                  const cls = s === 'paid' ? 'bg-green-100 text-green-800' :
+                              s === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                              s === 'expiring' ? 'bg-orange-100 text-orange-800' :
+                              'bg-red-100 text-red-800';
+                  return <span className={`px-2 py-1 rounded-full text-xs ${cls}`}>{label}</span>;
+                })()} 
               />
               <DetailItem label="Membership ID" value={`MEM-${String(selectedUser.id).padStart(4, '0')}`} />
             </div>
@@ -617,7 +650,7 @@ const Home = () => {
                   title="Terminate Account"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                    <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" />
                   </svg>
                 </button>
               </div>
