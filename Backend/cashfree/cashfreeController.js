@@ -18,7 +18,7 @@ if (!CF_APP_ID || !CF_SECRET) {
 
 export const createPaymentSession = async (req, res) => {
   try {
-    const { orderId, orderAmount, customerName, customerEmail, customerPhone, userId, planType } = req.body;
+  const { orderId, orderAmount, customerName, customerEmail, customerPhone, userId, planType, planAmount, planDuration } = req.body;
     // Cashfree customer_id must be alphanumeric and may contain underscore or hyphens
     const customerId = (customerEmail || `guest_${Date.now()}`).replace(/[^A-Za-z0-9_-]/g, '_');
 
@@ -39,7 +39,9 @@ export const createPaymentSession = async (req, res) => {
         customerEmail,
         customerPhone
       },
-      planType
+      planType,
+      planAmount,
+      planDuration
     });
 
     await paymentRecord.save();
@@ -78,7 +80,10 @@ export const createPaymentSession = async (req, res) => {
       { orderId },
       { 
         paymentSessionId: response.data.payment_session_id,
-        cashfreeData: response.data
+        cashfreeData: response.data,
+        // ensure we persist any plan metadata that might have been missing
+        planAmount: paymentRecord.planAmount || planAmount,
+        planDuration: paymentRecord.planDuration || planDuration
       }
     );
 
@@ -311,6 +316,100 @@ export const fetchAndPrintAllTransactions = async (req, res) => {
   }
 };
 
+// Print saved payments from our database (safe, does not call Cashfree)
+export const printSavedPayments = async (req, res) => {
+  try {
+    const paymentRecords = await Payment.find({}).populate('userId', 'name email mobile').sort({ createdAt: -1 });
+
+    if (!paymentRecords || paymentRecords.length === 0) {
+      console.log('No saved payments found in database.');
+      return res.json({ success: true, message: 'No saved payments found', payments: [] });
+    }
+
+    console.log('\n' + '='.repeat(60));
+    console.log('💾 SAVED PAYMENTS FROM DATABASE');
+    console.log('='.repeat(60));
+
+    const output = paymentRecords.map(p => {
+      const name = p.customerDetails?.customerName || p.userId?.name || 'N/A';
+      const email = p.customerDetails?.customerEmail || p.userId?.email || 'N/A';
+      const amount = p.orderAmount || p.planAmount || 0;
+      const ts = p.paymentCompletedAt || p.updatedAt || p.createdAt;
+      const date = ts ? new Date(ts).toISOString() : null;
+      console.log(`👤 ${name} <${email}> — ₹${amount} — ${date}`);
+      return {
+        orderId: p.orderId,
+        name,
+        email,
+        amount,
+        date,
+        planType: p.planType || null,
+        planAmount: p.planAmount || null,
+        planDuration: p.planDuration || null,
+        paymentStatus: p.paymentStatus
+      };
+    });
+
+    console.log('='.repeat(60) + '\n');
+
+    res.json({ success: true, count: paymentRecords.length, payments: output });
+  } catch (error) {
+    console.error('Error printing saved payments:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Print only successful/paid payments from our database
+export const printPaidPayments = async (req, res) => {
+  try {
+    // Find payments marked as paid or with a completed timestamp
+    const paymentRecords = await Payment.find({
+      $or: [
+        { paymentStatus: { $regex: /^paid$/i } },
+        { paymentCompletedAt: { $exists: true, $ne: null } }
+      ]
+    }).populate('userId', 'name email mobile').sort({ paymentCompletedAt: -1, createdAt: -1 });
+
+    if (!paymentRecords || paymentRecords.length === 0) {
+      console.log('No paid payments found in database.');
+      return res.json({ success: true, message: 'No paid payments found', payments: [] });
+    }
+
+    console.log('\n' + '='.repeat(60));
+    console.log('💸 PAID PAYMENTS FROM DATABASE');
+    console.log('='.repeat(60));
+
+    const output = paymentRecords.map(p => {
+      const name = p.customerDetails?.customerName || p.userId?.name || 'N/A';
+      const email = p.customerDetails?.customerEmail || p.userId?.email || 'N/A';
+      const amount = p.orderAmount || p.planAmount || 0;
+      const ts = p.paymentCompletedAt || p.updatedAt || p.createdAt;
+      const date = ts ? new Date(ts).toISOString() : null;
+      const human = ts ? new Date(ts).toLocaleString('en-IN') : 'N/A';
+      console.log(`👤 ${name} <${email}> — ₹${amount} — ${human}`);
+      return {
+        orderId: p.orderId,
+        name,
+        email,
+        amount,
+        date,
+        humanDate: human,
+        planType: p.planType || null,
+        planAmount: p.planAmount || null,
+        planDuration: p.planDuration || null,
+        paymentStatus: p.paymentStatus
+      };
+    });
+
+    console.log('='.repeat(60) + '\n');
+
+    res.json({ success: true, count: paymentRecords.length, payments: output });
+  } catch (error) {
+    console.error('Error printing paid payments:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 // 🚀 NEW: Sync user data based on successful payments
 export const syncUserDataWithPayments = async (req, res) => {
   try {
@@ -378,6 +477,12 @@ export const syncUserDataWithPayments = async (req, res) => {
         
         if (!user) {
           console.log(`❌ User not found for payment ${transaction.orderId} (tried userId and email match)`);
+          continue;
+        }
+        // If the user was manually suspended or terminated, skip automatic sync to avoid overwriting manual changes
+        const manualStatuses = ['suspended', 'terminated'];
+        if (user.accountStatus && manualStatuses.includes(String(user.accountStatus).toLowerCase())) {
+          console.log(`🔒 Skipping user ${user.email} because accountStatus is manual: ${user.accountStatus}`);
           continue;
         }
         

@@ -270,3 +270,67 @@ export const updateUserDetails = async (id, updates) => {
     throw error;
   }
 };
+
+// Plan-related API functions
+export const getAllPlans = async () => {
+  try {
+    const response = await fetch(`${API_BASE}/api/plans`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    });
+    
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to fetch plans');
+    }
+    
+    return data.data; // Return the plans array
+  } catch (error) {
+    console.error('Get all plans error:', error);
+    throw error;
+  }
+};
+
+export const getPlanById = async (id) => {
+  try {
+    const response = await fetch(`${API_BASE}/api/plans/${id}`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    });
+    
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to fetch plan');
+    }
+    
+    return data.data; // Return the plan object
+  } catch (error) {
+    console.error('Get plan by ID error:', error);
+    throw error;
+  }
+};
+
+export const getPlanByType = async (planType) => {
+  try {
+    const response = await fetch(`${API_BASE}/api/plans/type/${planType}`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    });
+    
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to fetch plan');
+    }
+    
+    return data.data; // Return the plan object
+  } catch (error) {
+    console.error('Get plan by type error:', error);
+    throw error;
+  }
+};

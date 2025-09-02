@@ -6,6 +6,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import authRoutes from "./routes/auth.js";
 import cashfreeRoutes from "./cashfree/cashfreeRoutes.js";
+import planRoutes from "./routes/planRoutes.js";
 
 // Configure environment variables
 const __filename = fileURLToPath(import.meta.url);
@@ -54,6 +55,7 @@ app.get("/",(req,res)=>{
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/payment", cashfreeRoutes);
+app.use("/api/plans", planRoutes);
 
 // Connect MongoDB
 mongoose.connect(process.env.MONGO_URI)

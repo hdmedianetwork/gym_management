@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { fadeIn, staggerContainer } from '../utils/motion';
 import { createCashfreeSession } from '../utils/payment';
+import { getAllPlans } from '../utils/api';
 import { FiAlertTriangle, FiStar, FiCheckCircle } from 'react-icons/fi';
 import Navbar from '../components/Navbar';
 
@@ -21,53 +22,59 @@ const loadCashfreeScript = () => {
 const Home = () => {
   const navigate = useNavigate();
   const [user, setUser] = React.useState(null);
-  const plans = [
-    {
-      name: 'Starter Plan',
-      price: '₹999',
-      amount: 999,
-      period: '/month',
-      features: [
+  const [plans, setPlans] = React.useState([]);
+  const [isLoadingPlans, setIsLoadingPlans] = React.useState(true);
+  const [plansError, setPlansError] = React.useState(null);
+
+  // Helper function to get plan features based on plan type
+  const getPlanFeatures = (planType) => {
+    const features = {
+      basic: [
         'Access to gym floor',
         'Standard equipment',
         'Locker room access',
         '1 Free Training'
       ],
-      popular: false,
-      gradient: 'from-blue-500 to-cyan-400'
-    },
-    {
-      name: 'Growth Plan',
-      price: '₹1,999',
-      amount: 1999,
-      period: '/month',
-      features: [
-        'All Starter features',
+      standard: [
+        'All Basic features',
         'Group classes',
         'Sauna access',
         '3 Free Trainings',
         'Nutrition plan'
       ],
-      popular: true,
-      gradient: 'from-purple-600 to-pink-500'
-    },
-    {
-      name: 'Elite Plan',
-      price: '₹2,999',
-      amount: 2999,
-      period: '/month',
-      features: [
-        'All Growth features',
+      premium: [
+        'All Standard features',
         '24/7 Access',
         'Personal trainer',
         'Unlimited classes',
         'Massage chair access',
         'Elite locker'
-      ],
-      popular: false,
-      gradient: 'from-amber-500 to-orange-500'
-    }
-  ];
+      ]
+    };
+    return features[planType.toLowerCase()] || [];
+  };
+
+  // Helper function to get plan styling based on plan type
+  const getPlanStyling = (planType, index) => {
+    const styling = {
+      basic: {
+        gradient: 'from-blue-500 to-cyan-400',
+        popular: false
+      },
+      standard: {
+        gradient: 'from-purple-600 to-pink-500',
+        popular: true
+      },
+      premium: {
+        gradient: 'from-amber-500 to-orange-500',
+        popular: false
+      }
+    };
+    return styling[planType.toLowerCase()] || {
+      gradient: 'from-gray-500 to-gray-600',
+      popular: index === 1 // Make middle plan popular by default
+    };
+  };
 
   const [selectedPlan, setSelectedPlan] = React.useState(null);
   const [isSubscribed, setIsSubscribed] = React.useState(false);
@@ -82,6 +89,57 @@ const Home = () => {
     }, 10000); // 10 seconds
 
     return () => clearTimeout(timer);
+  }, []);
+
+  // Fetch plans from API
+  React.useEffect(() => {
+    const fetchPlans = async () => {
+      try {
+        setIsLoadingPlans(true);
+        setPlansError(null);
+        const plansData = await getAllPlans();
+        
+        // Transform API data to match component structure
+        const transformedPlans = plansData.map((plan, index) => {
+          const styling = getPlanStyling(plan.planType, index);
+          return {
+            _id: plan._id,
+            name: `${plan.planType.charAt(0).toUpperCase() + plan.planType.slice(1)} Plan`,
+            price: `₹${plan.amount.toLocaleString('en-IN')}`,
+            amount: plan.amount,
+            duration: plan.duration,
+            period: plan.duration > 1 ? `/${plan.duration} months` : '/month',
+            features: getPlanFeatures(plan.planType),
+            popular: styling.popular,
+            gradient: styling.gradient,
+            planType: plan.planType
+          };
+        });
+        
+        setPlans(transformedPlans);
+      } catch (error) {
+        console.error('Error fetching plans:', error);
+        setPlansError('Failed to load plans. Please refresh the page.');
+        // Fallback to default plans if API fails
+        setPlans([
+          {
+            name: 'Basic Plan',
+            price: '₹999',
+            amount: 999,
+            duration: 1,
+            period: '/month',
+            features: getPlanFeatures('basic'),
+            popular: false,
+            gradient: 'from-blue-500 to-cyan-400',
+            planType: 'basic'
+          }
+        ]);
+      } finally {
+        setIsLoadingPlans(false);
+      }
+    };
+
+    fetchPlans();
   }, []);
 
   React.useEffect(() => {
@@ -125,8 +183,9 @@ const Home = () => {
             customerEmail,
             customerPhone,
             returnUrl,
-            planType: plan.name, // Include plan name
+            planType: plan.planType || plan.name, // Include plan type
             planAmount: plan.amount, // Include plan amount
+            planDuration: plan.duration || 1, // Include plan duration
           });
 
           if (!paymentSessionId) throw new Error('No paymentSessionId received');
@@ -273,9 +332,48 @@ const Home = () => {
             </motion.p>
           </motion.div>
 
-          {/* Pricing Cards */}
-          <div id="plans" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto">
-            {plans.map((plan, index) => (
+          {/* Error Message */}
+          {plansError && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-8 p-4 bg-red-50 border border-red-200 rounded-lg"
+            >
+              <div className="flex items-center">
+                <FiAlertTriangle className="text-red-500 mr-2" />
+                <span className="text-red-700">{plansError}</span>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Loading State */}
+          {isLoadingPlans ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto">
+              {[...Array(3)].map((_, index) => (
+                <div key={index} className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+                  <div className="h-1.5 bg-gray-100"></div>
+                  <div className="p-6 sm:p-8 animate-pulse">
+                    <div className="text-center">
+                      <div className="h-6 bg-gray-200 rounded mb-8"></div>
+                      <div className="mb-10">
+                        <div className="h-12 bg-gray-200 rounded mb-2"></div>
+                        <div className="h-4 bg-gray-200 rounded"></div>
+                      </div>
+                      <div className="space-y-3 mb-10">
+                        {[...Array(4)].map((_, i) => (
+                          <div key={i} className="h-4 bg-gray-200 rounded"></div>
+                        ))}
+                      </div>
+                      <div className="h-12 bg-gray-200 rounded"></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            /* Pricing Cards */
+            <div id="plans" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto">
+              {plans.map((plan, index) => (
               <motion.div 
                 key={index}
                 initial={{ y: 50, opacity: 0 }}
@@ -335,9 +433,13 @@ const Home = () => {
                             <span className="text-5xl sm:text-6xl font-bold text-gray-900">
                               {plan.price.replace('₹', '').replace(',', '')}
                             </span>
-                            <span className="text-xl font-medium text-gray-400 ml-1.5">/month</span>
+                            <span className="text-xl font-medium text-gray-400 ml-1.5">
+                              {plan.duration > 1 ? `/${plan.duration}mo` : '/month'}
+                            </span>
                           </div>
-                          <span className="text-sm font-medium text-gray-400 mt-3">billed monthly</span>
+                          <span className="text-sm font-medium text-gray-400 mt-3">
+                            {plan.duration > 1 ? `billed for ${plan.duration} months` : 'billed monthly'}
+                          </span>
                         </div>
                       </motion.div>
                       
@@ -411,8 +513,9 @@ const Home = () => {
                   </div>
                 </div>
               </motion.div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
           
           <motion.div 
             className="mt-16 text-center text-sm text-gray-400"

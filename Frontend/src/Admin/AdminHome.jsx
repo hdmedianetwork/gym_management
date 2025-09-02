@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getAllUsers, getSuccessfulPayments, syncUsersWithPayments, updateUserStatus } from '../utils/api';
+import { getAllUsers, getSuccessfulPayments, syncUsersWithPayments, updateUserStatus, getAllPlans } from '../utils/api';
 import { Card, Table, Modal } from 'antd';
 import { UserOutlined, ClockCircleOutlined, StopOutlined, CloseOutlined } from '@ant-design/icons';
 import TerminatedUsers from './TerminatedUsers';
@@ -35,170 +35,6 @@ const categorizeUsers = (users) => {
   return { active, expiring, suspended, terminated };
 };
 
-const columns = {
-  active: [
-    { title: 'Name', dataIndex: 'name', key: 'name' },
-    { 
-      title: 'Source', 
-      key: 'source',
-      render: (_, record) => {
-        const isManual = (record.planType || '').toLowerCase() === 'manual';
-        return isManual ? (
-          <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">Manual</span>
-        ) : null;
-      }
-    },
-    { title: 'Email', dataIndex: 'email', key: 'email' },
-    { 
-      title: 'Account Status', 
-      key: 'status',
-      render: (_, record) => {
-        const status = (record.accountStatus || '').toLowerCase();
-        let colorClass = 'bg-gray-100 text-gray-800';
-        if (status === 'active') colorClass = 'bg-green-100 text-green-800';
-        else if (status === 'expiring') colorClass = 'bg-yellow-100 text-yellow-800';
-        else if (status === 'suspended') colorClass = 'bg-red-100 text-red-800';
-        return (
-          <span className={`px-2 py-1 rounded-full text-xs font-medium ${colorClass}`}>
-            {status.charAt(0).toUpperCase() + status.slice(1) || 'Unknown'}
-          </span>
-        );
-      }
-    },
-    { 
-      title: 'Phone', 
-      dataIndex: 'mobile', 
-      key: 'mobile',
-      render: (mobile, record) => record.mobile || record.phone || 'N/A'
-    },
-    { 
-      title: 'Amount Paid', 
-      key: 'planInfo',
-      render: (_, record) => {
-        const orderAmount = record.orderAmount || record.planAmount || 0;
-        return (
-          <span className="font-medium text-gray-900">₹{orderAmount.toLocaleString()}</span>
-        );
-      }
-    },
-    { 
-      title: 'Payment Status', 
-      dataIndex: 'paymentStatus', 
-      key: 'paymentStatus',
-      render: (status) => {
-        const s = (status || '').toLowerCase();
-        const label = s ? s.charAt(0).toUpperCase() + s.slice(1) : 'Unknown';
-        const cls = s === 'paid' ? 'bg-green-100 text-green-800' :
-                    s === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                    s === 'overdue' ? 'bg-red-100 text-red-800' :
-                    'bg-gray-100 text-gray-800';
-        return (
-          <span className={`px-2 py-1 rounded-full text-xs ${cls}`}>
-            {label}
-          </span>
-        );
-      }
-    },
-  ],
-  expiring: [
-    { title: 'Name', dataIndex: 'name', key: 'name' },
-    { 
-      title: 'Source', 
-      key: 'source',
-      render: (_, record) => {
-        const isManual = (record.planType || '').toLowerCase() === 'manual';
-        return isManual ? (
-          <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">Manual</span>
-        ) : null;
-      }
-    },
-    { title: 'Email', dataIndex: 'email', key: 'email' },
-    { 
-      title: 'Phone', 
-      dataIndex: 'mobile', 
-      key: 'mobile',
-      render: (mobile, record) => record.mobile || record.phone || 'N/A'
-    },
-    { 
-      title: 'Amount Paid', 
-      key: 'planInfo',
-      render: (_, record) => {
-        const orderAmount = record.orderAmount || record.planAmount || 0;
-        return (
-          <span className="font-medium text-gray-900">₹{orderAmount.toLocaleString()}</span>
-        );
-      }
-    },
-    { 
-      title: 'Payment Status', 
-      dataIndex: 'paymentStatus', 
-      key: 'paymentStatus',
-      render: (status) => {
-        const s = (status || '').toLowerCase();
-        const label = s ? s.charAt(0).toUpperCase() + s.slice(1) : 'Unknown';
-        const cls = s === 'paid' ? 'bg-green-100 text-green-800' :
-                    s === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                    s === 'overdue' ? 'bg-red-100 text-red-800' :
-                    'bg-gray-100 text-gray-800';
-        return (
-          <span className={`px-2 py-1 rounded-full text-xs ${cls}`}>
-            {label}
-          </span>
-        );
-      }
-    },
-    { title: 'End Date', dataIndex: 'endDate', key: 'endDate' },
-  ],
-  suspended: [
-    { title: 'Name', dataIndex: 'name', key: 'name' },
-    { 
-      title: 'Source', 
-      key: 'source',
-      render: (_, record) => {
-        const isManual = (record.planType || '').toLowerCase() === 'manual';
-        return isManual ? (
-          <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">Manual</span>
-        ) : null;
-      }
-    },
-    { title: 'Email', dataIndex: 'email', key: 'email' },
-    { 
-      title: 'Phone', 
-      dataIndex: 'mobile', 
-      key: 'mobile',
-      render: (mobile, record) => record.mobile || record.phone || 'N/A'
-    },
-    { 
-      title: 'Amount Paid', 
-      key: 'planInfo',
-      render: (_, record) => {
-        const orderAmount = record.orderAmount || record.planAmount || 0;
-        return (
-          <span className="font-medium text-gray-900">₹{orderAmount.toLocaleString()}</span>
-        );
-      }
-    },
-    { 
-      title: 'Payment Status', 
-      dataIndex: 'paymentStatus', 
-      key: 'paymentStatus',
-      render: (status) => {
-        const s = (status || '').toLowerCase();
-        const label = s ? s.charAt(0).toUpperCase() + s.slice(1) : 'Unknown';
-        const cls = s === 'paid' ? 'bg-green-100 text-green-800' :
-                    s === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                    s === 'overdue' ? 'bg-red-100 text-red-800' :
-                    'bg-gray-100 text-gray-800';
-        return (
-          <span className={`px-2 py-1 rounded-full text-xs ${cls}`}>
-            {label}
-          </span>
-        );
-      }
-    },
-    { title: 'End Date', dataIndex: 'endDate', key: 'endDate' },
-  ]
-};
 
 
 const Home = () => {
@@ -206,17 +42,193 @@ const Home = () => {
   const [usersData, setUsersData] = useState({ active: [], expiring: [], suspended: [], terminated: [] });
   const [tableData, setTableData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
-  const [tableColumns, setTableColumns] = useState(columns.active);
+  const [tableColumns, setTableColumns] = useState([]);
   const [tableTitle, setTableTitle] = useState('');
   const [searchText, setSearchText] = useState('');
   const [selectedUser, setSelectedUser] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [paymentsData, setPaymentsData] = useState([]);
+  const [plansData, setPlansData] = useState([]);
   const [showTerminatedModal, setShowTerminatedModal] = useState(false);
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(null); // 'suspend' | 'terminate' | 'inactive' | null
+
+  // Define columns inside component to access calculateEndDate
+  const columns = {
+    active: [
+      { title: 'Name', dataIndex: 'name', key: 'name' },
+      { 
+        title: 'Source', 
+        key: 'source',
+        render: (_, record) => {
+          const isManual = (record.planType || '').toLowerCase() === 'manual';
+          return isManual ? (
+            <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">Manual</span>
+          ) : null;
+        }
+      },
+      { title: 'Email', dataIndex: 'email', key: 'email' },
+      { 
+        title: 'Account Status', 
+        key: 'status',
+        render: (_, record) => {
+          const status = (record.accountStatus || '').toLowerCase();
+          let colorClass = 'bg-gray-100 text-gray-800';
+          if (status === 'active') colorClass = 'bg-green-100 text-green-800';
+          else if (status === 'expiring') colorClass = 'bg-yellow-100 text-yellow-800';
+          else if (status === 'suspended') colorClass = 'bg-red-100 text-red-800';
+          return (
+            <span className={`px-2 py-1 rounded-full text-xs font-medium ${colorClass}`}>
+              {status.charAt(0).toUpperCase() + status.slice(1) || 'Unknown'}
+            </span>
+          );
+        }
+      },
+      { 
+        title: 'Phone', 
+        dataIndex: 'mobile', 
+        key: 'mobile',
+        render: (mobile, record) => record.mobile || record.phone || 'N/A'
+      },
+      { 
+        title: 'Amount Paid', 
+        key: 'planInfo',
+        render: (_, record) => {
+          const orderAmount = record.orderAmount || record.planAmount || 0;
+          return (
+            <span className="font-medium text-gray-900">₹{orderAmount.toLocaleString()}</span>
+          );
+        }
+      },
+      { 
+        title: 'Payment Status', 
+        dataIndex: 'paymentStatus', 
+        key: 'paymentStatus',
+        render: (status) => {
+          const s = (status || '').toLowerCase();
+          const label = s ? s.charAt(0).toUpperCase() + s.slice(1) : 'Unknown';
+          const cls = s === 'paid' ? 'bg-green-100 text-green-800' :
+                      s === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                      s === 'overdue' ? 'bg-red-100 text-red-800' :
+                      'bg-gray-100 text-gray-800';
+          return (
+            <span className={`px-2 py-1 rounded-full text-xs ${cls}`}>
+              {label}
+            </span>
+          );
+        }
+      },
+    ],
+    expiring: [
+      { title: 'Name', dataIndex: 'name', key: 'name' },
+      { 
+        title: 'Source', 
+        key: 'source',
+        render: (_, record) => {
+          const isManual = (record.planType || '').toLowerCase() === 'manual';
+          return isManual ? (
+            <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">Manual</span>
+          ) : null;
+        }
+      },
+      { title: 'Email', dataIndex: 'email', key: 'email' },
+      { 
+        title: 'Phone', 
+        dataIndex: 'mobile', 
+        key: 'mobile',
+        render: (mobile, record) => record.mobile || record.phone || 'N/A'
+      },
+      { 
+        title: 'Amount Paid', 
+        key: 'planInfo',
+        render: (_, record) => {
+          const orderAmount = record.orderAmount || record.planAmount || 0;
+          return (
+            <span className="font-medium text-gray-900">₹{orderAmount.toLocaleString()}</span>
+          );
+        }
+      },
+      { 
+        title: 'Payment Status', 
+        dataIndex: 'paymentStatus', 
+        key: 'paymentStatus',
+        render: (status) => {
+          const s = (status || '').toLowerCase();
+          const label = s ? s.charAt(0).toUpperCase() + s.slice(1) : 'Unknown';
+          const cls = s === 'paid' ? 'bg-green-100 text-green-800' :
+                      s === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                      s === 'overdue' ? 'bg-red-100 text-red-800' :
+                      'bg-gray-100 text-gray-800';
+          return (
+            <span className={`px-2 py-1 rounded-full text-xs ${cls}`}>
+              {label}
+            </span>
+          );
+        }
+      },
+      { 
+        title: 'End Date', 
+        key: 'endDate',
+        render: (_, record) => calculateEndDate(record)
+      },
+    ],
+    suspended: [
+      { title: 'Name', dataIndex: 'name', key: 'name' },
+      { 
+        title: 'Source', 
+        key: 'source',
+        render: (_, record) => {
+          const isManual = (record.planType || '').toLowerCase() === 'manual';
+          return isManual ? (
+            <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">Manual</span>
+          ) : null;
+        }
+      },
+      { title: 'Email', dataIndex: 'email', key: 'email' },
+      { 
+        title: 'Phone', 
+        dataIndex: 'mobile', 
+        key: 'mobile',
+        render: (mobile, record) => record.mobile || record.phone || 'N/A'
+      },
+      { 
+        title: 'Amount Paid', 
+        key: 'planInfo',
+        render: (_, record) => {
+          const orderAmount = record.orderAmount || record.planAmount || 0;
+          return (
+            <span className="font-medium text-gray-900">₹{orderAmount.toLocaleString()}</span>
+          );
+        }
+      },
+      { 
+        title: 'Payment Status', 
+        dataIndex: 'paymentStatus', 
+        key: 'paymentStatus',
+        render: (status) => {
+          const s = (status || '').toLowerCase();
+          const label = s ? s.charAt(0).toUpperCase() + s.slice(1) : 'Unknown';
+          const cls = s === 'paid' ? 'bg-green-100 text-green-800' :
+                      s === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                      s === 'overdue' ? 'bg-red-100 text-red-800' :
+                      'bg-gray-100 text-gray-800';
+          return (
+            <span className={`px-2 py-1 rounded-full text-xs ${cls}`}>
+              {label}
+            </span>
+          );
+        }
+      },
+      { 
+        title: 'End Date', 
+        key: 'endDate',
+        render: (_, record) => calculateEndDate(record)
+      },
+    ]
+  };
 
   // Helper to format dates consistently
   const formatDate = (date) => {
@@ -224,6 +236,156 @@ const Home = () => {
     const d = new Date(date);
     if (isNaN(d)) return 'N/A';
     return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  };
+
+  // Helper function to calculate end date based on plan duration
+  const calculateEndDate = (user) => {
+    console.log('🔍 CALCULATING END DATE FOR USER:', user.name, user.email);
+    
+    // If user already has an end date, return it
+    if (user.endDate || user.expiryDate || user.membershipEndDate) {
+      const existingDate = user.endDate || user.expiryDate || user.membershipEndDate;
+      console.log('✅ Found existing end date:', existingDate);
+      return formatDate(existingDate);
+    }
+
+    // Try to calculate based on plan type and payment date
+    let paymentDate = user.paymentDate || user.joinDate || user.createdAt;
+    console.log('📅 Payment/Join Date:', paymentDate);
+    if (!paymentDate) {
+      console.log('❌ No payment date found - using fallback current date');
+      // Fallback: use current date as payment date
+      paymentDate = new Date().toISOString();
+      console.log('🔄 Using fallback payment date:', paymentDate);
+    }
+
+    // First: if we have a paid amount, try to match it to a plan in the plans collection
+    const paidAmount = Number(user.paymentDate ? (user.orderAmount || user.planAmount || 0) : (user.orderAmount || user.planAmount || 0)) || 0;
+    if (paidAmount > 0 && plansData && plansData.length > 0) {
+      try {
+        const planMatch = plansData.find(p => {
+          const amount = Number(p.amount);
+          const duration = Number(p.duration || 1);
+          return amount === paidAmount || (amount * duration) === paidAmount;
+        });
+
+        if (planMatch) {
+          console.log('🎯 Found plan by paid amount match:', { paidAmount, planMatch });
+          const start = new Date(paymentDate);
+          const end = new Date(start);
+          end.setMonth(end.getMonth() + Number(planMatch.duration || 1));
+          console.log('🎉 Calculated End Date from amount-match:', end, 'Duration:', planMatch.duration);
+          return formatDate(end);
+        }
+      } catch (err) {
+        console.warn('Error while trying amount-match for plans:', err);
+      }
+    }
+
+    // Find the plan by matching plan type from payment data or user data
+    let planType = null;
+    
+    // Try to get plan type from payment data first
+    const userPayment = paymentsData.find(payment => 
+      payment.customerDetails?.customer_email?.toLowerCase() === user.email?.toLowerCase()
+    );
+    
+    console.log('💰 User Payment Data:', userPayment);
+    console.log('📊 Available Plans Data:', plansData);
+    
+    if (userPayment?.planType) {
+      planType = userPayment.planType;
+      console.log('✅ Found plan type from payment:', planType);
+    } else if (user.planType && user.planType !== 'no plan') {
+      planType = user.planType;
+      console.log('✅ Found plan type from user:', planType);
+    }
+
+    console.log('🎯 Final Plan Type:', planType);
+    if (!planType) {
+      console.log('❌ No plan type found - using fallback');
+      // Fallback: if user has createdAt date, use basic plan
+      if (user.createdAt) {
+        console.log('🔄 Using fallback: basic plan with createdAt date');
+        planType = 'basic';
+      } else {
+        return 'N/A';
+      }
+    }
+
+    // Find the plan from plansData to get duration
+    const plan = plansData.find(p => 
+      p.planType.toLowerCase() === planType.toLowerCase() ||
+      p.planType.toLowerCase() === planType.toLowerCase().replace(' plan', '')
+    );
+
+    console.log('📋 Matched Plan:', plan);
+    if (!plan || !plan.duration) {
+      console.log('❌ No matching plan found or no duration');
+      return 'N/A';
+    }
+
+    // Calculate end date: payment date + plan duration (in months)
+    const startDate = new Date(paymentDate);
+    const endDate = new Date(startDate);
+    endDate.setMonth(endDate.getMonth() + plan.duration);
+    
+    console.log('🎉 Calculated End Date:', endDate, 'Duration:', plan.duration, 'months');
+    // If no planType found, try to infer plan from amount paid
+    if (!planType) {
+      const paidAmount = Number(userPayment?.orderAmount || user.planAmount || user.orderAmount || 0);
+      console.log('🔎 Trying to infer plan from paid amount:', paidAmount);
+      if (paidAmount > 0 && plansData && plansData.length > 0) {
+        // Normalize plans with numeric fields
+        const normalized = plansData.map(p => ({
+          planType: p.planType,
+          amount: Number(p.amount),
+          duration: Number(p.duration || 1),
+          total: Number(p.amount) * Number(p.duration || 1)
+        }));
+
+        console.log('📋 Plans (amount/duration/total):', normalized);
+
+        // 1) Exact match to single-month plan amount
+        let planByAmount = normalized.find(p => p.amount === paidAmount);
+
+        // 2) Exact match to total price (amount * duration)
+        if (!planByAmount) {
+          planByAmount = normalized.find(p => p.total === paidAmount);
+        }
+
+        // 3) Tolerant match for totals (allow small rounding differences, e.g., ±5)
+        if (!planByAmount) {
+          const tolerance = 5; // rupees
+          planByAmount = normalized.find(p => Math.abs(p.total - paidAmount) <= tolerance);
+        }
+
+        // 4) Nearest total price fallback (choose plan with minimal absolute difference)
+        if (!planByAmount) {
+          let best = null;
+          let bestDiff = Infinity;
+          for (const p of normalized) {
+            const diff = Math.abs(p.total - paidAmount);
+            if (diff < bestDiff) { bestDiff = diff; best = p; }
+          }
+          // Only pick nearest if it's reasonably close (e.g., within 20 rupees or within 5% of paidAmount)
+          if (best && (bestDiff <= 20 || bestDiff / Math.max(1, paidAmount) <= 0.05)) {
+            planByAmount = best;
+            console.log('ℹ️ Nearest-plan fallback chosen with diff', bestDiff);
+          } else {
+            console.log('ℹ️ Nearest-plan found but difference too large:', bestDiff);
+          }
+        }
+
+        if (planByAmount) {
+          planType = planByAmount.planType;
+          console.log('✅ Inferred plan from amount:', planByAmount);
+        } else {
+          console.log('❌ Could not infer plan from amount:', paidAmount);
+        }
+      }
+    }
+    return formatDate(endDate);
   };
 
   // Helper function to merge user data with payment data
@@ -254,14 +416,25 @@ const Home = () => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        // Fetch both users and payments
-        const [usersRes, paymentsRes] = await Promise.all([
+        // Fetch users, payments, and plans
+        const [usersRes, paymentsRes, plansRes] = await Promise.all([
           getAllUsers(),
-          getSuccessfulPayments()
+          getSuccessfulPayments(),
+          getAllPlans()
         ]);
         
         let users = usersRes.users || [];
         let payments = [];
+        let plans = plansRes || [];
+        
+        // Store plans data
+        setPlansData(plans);
+        // Print plan durations to browser console for debugging
+        try {
+          console.log('📦 Plans fetched (planType / amount / duration):', plans.map(p => ({ planType: p.planType, amount: Number(p.amount), duration: Number(p.duration || 1) })));
+        } catch (e) {
+          console.log('📦 Plans fetched (raw):', plans);
+        }
         
         // Process payments data
         if (paymentsRes.success && paymentsRes.transactions && paymentsRes.transactions.length > 0) {
@@ -306,6 +479,8 @@ const Home = () => {
         setUsersData(categorized);
         setTableData(categorized.active);
         setFilteredData(categorized.active);
+        // Hide Plan Type column
+        setTableColumns(columns.active.filter(col => col.key !== 'planType'));
         
       } catch (err) {
         console.error('Failed to fetch data:', err);
@@ -335,12 +510,13 @@ const Home = () => {
     setActiveTab(type);
     setTableData(usersData[type]);
     setFilteredData(usersData[type]);
-    setTableColumns(columns[type]);
+    // Hide Plan Type column
+    setTableColumns((columns[type] || []).filter(col => col.key !== 'planType'));
     setSearchText('');
     setTableTitle(
       type === 'active' ? '' : 
-      type === 'expiring' ? 'Expiring Users (Next 10 Days)' : 
-      'Suspended Users'
+      type === 'expiring' ? '' : 
+      ''
     );
   };
 
@@ -400,9 +576,11 @@ const Home = () => {
 
   const handleTerminateUser = async () => {
     if (!selectedUser?._id) return;
+    if (actionLoading) return; // prevent concurrent actions
     try {
       // Confirm action
       if (!confirm(`Terminate ${selectedUser.name}'s account?`)) return;
+      setActionLoading('terminate');
       await updateUserStatus(selectedUser._id, 'terminated');
 
       // Refetch users and payments, re-merge and update state
@@ -415,6 +593,31 @@ const Home = () => {
       setShowTerminatedModal(true);
     } catch (err) {
       alert('Failed to terminate user: ' + err.message);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleSuspendUser = async () => {
+    if (!selectedUser?._id) return;
+    if (actionLoading) return; // prevent concurrent actions
+    try {
+      if (!confirm(`Suspend ${selectedUser.name}'s account?`)) return;
+      setActionLoading('suspend');
+      await updateUserStatus(selectedUser._id, 'suspended');
+
+      // Refresh users and payments, re-merge and update state
+      await refreshUsers();
+      // Close the details modal
+      setIsModalVisible(false);
+      setSelectedUser(null);
+
+      // Switch to Suspended tab for quick review
+      setActiveTab('suspended');
+    } catch (err) {
+      alert('Failed to suspend user: ' + err.message);
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -442,6 +645,29 @@ const Home = () => {
     const currentData = categorized[activeTab] || [];
     setTableData(currentData);
     setFilteredData(currentData);
+  };
+
+  const handleSetInactiveUser = async () => {
+    if (!selectedUser?._id) return;
+    if (actionLoading) return; // prevent concurrent actions
+    try {
+      if (!confirm(`Set ${selectedUser.name}'s account to Inactive? This will move them to All Users.`)) return;
+      setActionLoading('inactive');
+      await updateUserStatus(selectedUser._id, 'inactive');
+
+      // Refresh users and payments, re-merge and update state
+      await refreshUsers();
+      // Close the details modal
+      setIsModalVisible(false);
+      setSelectedUser(null);
+
+      // Switch to Active/All tab for quick review
+      setActiveTab('active');
+    } catch (err) {
+      alert('Failed to set user inactive: ' + err.message);
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   return (
@@ -700,7 +926,7 @@ const Home = () => {
               <DetailItem label="Join Date" value={formatDate(selectedUser.paymentDate || selectedUser.joinDate || selectedUser.createdAt)} />
               <DetailItem 
                 label={activeTab === 'expiring' ? 'Expiry Date' : 'End Date'} 
-                value={selectedUser.endDate || '2023-12-31'} 
+                value={calculateEndDate(selectedUser)} 
               />
               <DetailItem 
                 label="Payment Status" 
@@ -723,15 +949,50 @@ const Home = () => {
                 <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
                   View Payment History
                 </button>
-                <button 
-                  onClick={handleTerminateUser}
-                  className="p-2 text-red-600 border border-red-200 hover:bg-red-50 rounded-full transition-colors"
-                  title="Terminate Account"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" />
-                  </svg>
-                </button>
+                <div className="flex items-center gap-2">
+                  {selectedUser && String(selectedUser.accountStatus || '').toLowerCase() === 'suspended' ? (
+                    <button
+                      onClick={handleSetInactiveUser}
+                      className="px-3 py-2 text-gray-700 border border-gray-200 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-2"
+                      title="Set Inactive"
+                      disabled={actionLoading === 'inactive'}
+                    >
+                      {actionLoading === 'inactive' ? (
+                        <svg className="animate-spin h-4 w-4 text-gray-600" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                      ) : null}
+                      Set Inactive
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={handleSuspendUser}
+                      className="p-2 text-yellow-600 border border-yellow-200 hover:bg-yellow-50 rounded-full transition-colors flex items-center justify-center"
+                      title="Suspend Account"
+                      disabled={actionLoading === 'suspend'}
+                    >
+                      {actionLoading === 'suspend' ? (
+                        <svg className="animate-spin h-4 w-4 text-yellow-600" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path d="M10 2a1 1 0 00-1 1v6H5a1 1 0 000 2h4v6a1 1 0 002 0v-6h4a1 1 0 000-2h-4V3a1 1 0 00-1-1z" />
+                        </svg>
+                      )}
+                    </button>
+                  )}
+                  <button 
+                    onClick={handleTerminateUser}
+                    className="p-2 text-red-600 border border-red-200 hover:bg-red-50 rounded-full transition-colors flex items-center justify-center"
+                    title="Terminate Account"
+                    disabled={actionLoading === 'terminate'}
+                  >
+                    {actionLoading === 'terminate' ? (
+                      <svg className="animate-spin h-4 w-4 text-red-600" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
