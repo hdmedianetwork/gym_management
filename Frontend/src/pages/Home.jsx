@@ -6,6 +6,7 @@ import { createCashfreeSession } from '../utils/payment';
 import { getAllPlans } from '../utils/api';
 import { FiAlertTriangle, FiStar, FiCheckCircle } from 'react-icons/fi';
 import Navbar from '../components/Navbar';
+import toast from 'react-hot-toast';
 
 // Cashfree script loader (v3)
 const loadCashfreeScript = () => {
@@ -157,6 +158,10 @@ const Home = () => {
       navigate('/login');
       return;
     }
+    
+    // Clear any previous payment status
+    localStorage.removeItem('paymentCompleted');
+    
     setSelectedPlan(plan);
     
     // Load Cashfree script if not already loaded
@@ -196,24 +201,28 @@ const Home = () => {
             paymentSessionId,
             redirectTarget: '_self',
             onSuccess: () => {
+              // Set payment as completed in localStorage
+              localStorage.setItem('paymentCompleted', 'true');
               setIsSubscribed(true);
               setSelectedPlan(null);
-              alert('Payment successful!');
+              toast.success('Payment successful! Your subscription is now active.');
+              // Redirect to home after successful payment
+              navigate('/');
             },
             onFailure: (data) => {
               setSelectedPlan(null);
-              alert('Payment failed! ' + (data?.message || ''));
+              toast.error('Payment failed! ' + (data?.message || ''));
             },
           });
         } catch (error) {
           console.error('Cashfree v2 error:', error);
           setSelectedPlan(null);
-          alert(error?.message || 'Payment service is currently unavailable. Please try again later.');
+          toast.error(error?.message || 'Payment service is currently unavailable. Please try again later.');
         }
       } else if (Date.now() - started > 8000) {
         clearInterval(iv);
         setSelectedPlan(null);
-        alert('Payment service is currently unavailable. Please try again later.');
+        toast.error('Payment service is currently unavailable. Please try again later.');
       }
     }, 100);
   };
@@ -287,6 +296,7 @@ const Home = () => {
               transition={{
                 duration: 3 + Math.random() * 5,
                 repeat: Infinity,
+                repeatType: 'loop',
                 ease: 'easeInOut',
                 delay: Math.random() * 2,
               }}

@@ -10,13 +10,26 @@ import ContactUs from './pages/ContactUs';
 import Navbar from './components/Navbar';
 import AdminHome from './Admin/AdminHome';
 import AdminLogin from './auth/AdminLogin';
+import PaymentStatus from './pages/PaymentStatus';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
 
+// Component to handle payment status page access
+const PaymentStatusRedirect = () => {
+  const paymentCompleted = localStorage.getItem('paymentCompleted') === 'true';
+  
+  // If payment is already completed, redirect to home
+  if (paymentCompleted) {
+    return <Navigate to="/" replace />;
+  }
+  
+  return <PaymentStatus />;
+};
+
 function AppContent() {
   const location = useLocation();
-  const hideNavbarPaths = ['/login', '/signup', '/verify-otp', '/adminlogin'];
+  const hideNavbarPaths = ['/login', '/signup', '/verify-otp', '/adminlogin', '/payment-status'];
   const showNavbar = !hideNavbarPaths.includes(location.pathname);
   
   return (
@@ -29,6 +42,9 @@ function AppContent() {
           <Route path="/" element={<Home />} />
           <Route path="/home" element={<Home />} />
           <Route path="/contact" element={<ContactUs />} />
+
+          {/* Payment Status - Only accessible when coming from payment flow */}
+          <Route path="/payment-status" element={<PaymentStatusRedirect />} />
 
           {/* Auth Routes - Only accessible when not authenticated */}
           <Route path="/login" element={<ProtectedRoute requireAuth={false}><Login /></ProtectedRoute>} />
