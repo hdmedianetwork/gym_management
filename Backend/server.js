@@ -7,6 +7,8 @@ import { fileURLToPath } from 'url';
 import authRoutes from "./routes/auth.js";
 import cashfreeRoutes from "./cashfree/cashfreeRoutes.js";
 import planRoutes from "./routes/planRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
+import { startCronJob } from "./scripts/checkExpiringMemberships.js";
 
 // Configure environment variables
 const __filename = fileURLToPath(import.meta.url);
@@ -56,14 +58,19 @@ app.get("/",(req,res)=>{
 app.use("/api/auth", authRoutes);
 app.use("/api/payment", cashfreeRoutes);
 app.use("/api/plans", planRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // Connect MongoDB
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log("✅ MongoDB Connected");
     const port = process.env.PORT || 5000;
-    app.listen(port, () =>
-      console.log(`🚀 Server running on port ${port}`)
-    );
+    app.listen(port, () => {
+      console.log(`🚀 Server running on port ${port}`);
+      
+      // Start the cron job for checking expiring memberships
+      startCronJob();
+      console.log("⏰ Membership expiration check cron job started");
+    });
   })
   .catch(err => console.error(err));
