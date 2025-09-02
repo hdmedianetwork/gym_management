@@ -417,4 +417,121 @@ router.patch('/admin/users/:id', async (req, res) => {
   }
 });
 
+// Forgot Password - Send OTP
+router.post("/forgot-password", async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ error: "Email is required" });
+    }
+
+    // Find user by email
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Generate and save OTP
+    const otp = generateOTP();
+    user.otp = otp;
+    user.otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    
+    await user.save();
+
+    // Send OTP via email
+    const emailSent = await sendOTP(email, otp, 'password-reset');
+    if (!emailSent) {
+      return res.status(500).json({ error: 'Failed to send OTP' });
+    }
+
+    res.json({ 
+      success: true, 
+      message: 'OTP sent successfully',
+      email: user.email // Return hashed email for security
+    });
+  } catch (err) {
+    console.error('Forgot password error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Verify OTP for password reset
+router.post("/verify-reset-otp", async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    
+    if (!email || !otp) {
+      return res.status(400).json({ error: "Email and OTP are required" });
+    }
+
+    // Find user by email
+    const user = await User.findOne({ 
+      email: email.toLowerCase().trim(),
+      otp: otp,
+      otpExpires: { $gt: Date.now() } // OTP not expired
+    });
+
+    if (!user) {
+      return res.status(400).json({ error: "Invalid or expired OTP" });
+    }
+
+    // OTP is valid
+    res.json({ 
+      success: true, 
+      message: 'OTP verified successfully',
+      email: user.email
+    });
+  } catch (err) {
+    console.error('Verify OTP error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Reset Password
+router.post("/reset-password", async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+    
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({ error: "Email, OTP and new password are required" });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: "Password must be at least 6 characters long" });
+    }
+
+    // Find user by email and OTP
+    const user = await User.findOne({ 
+      email: email.toLowerCase().trim(),
+      otp: otp,
+      otpExpires: { $gt: Date.now() } // OTP not expired
+    });
+
+    if (!user) {
+      return res.status(400).json({ error: "Invalid or expired OTP" });
+    }
+
+    // Hash new password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // Update password and clear OTP
+    user.password = hashedPassword;
+    user.otp = undefined;
+    user.otpExpires = undefined;
+    
+    await user.save();
+
+    res.json({ 
+      success: true, 
+      message: 'Password reset successfully' 
+    });
+  } catch (err) {
+    console.error('Reset password error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 export default router;
