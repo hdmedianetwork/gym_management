@@ -239,18 +239,17 @@ const Home = () => {
   };
 
   // Helper function to calculate end date based on plan duration
-  const calculateEndDate = (user) => {
+  const calculateEndDate = (user, returnDate = false) => {
     console.log('🔍 CALCULATING END DATE FOR USER:', user.name, user.email);
     
     // If user already has an end date, return it
-    if (user.endDate || user.expiryDate || user.membershipEndDate) {
-      const existingDate = user.endDate || user.expiryDate || user.membershipEndDate;
-      console.log('✅ Found existing end date:', existingDate);
-      return formatDate(existingDate);
+    if (user.endDate) {
+      const endDate = new Date(user.endDate);
+      return returnDate ? endDate : formatDate(endDate);
     }
 
     // Try to calculate based on plan type and payment date
-    let paymentDate = user.paymentDate || user.joinDate || user.createdAt;
+    let paymentDate = user.paymentDate;
     console.log('📅 Payment/Join Date:', paymentDate);
     if (!paymentDate) {
       console.log('❌ No payment date found - using fallback current date');
@@ -275,7 +274,7 @@ const Home = () => {
           const end = new Date(start);
           end.setMonth(end.getMonth() + Number(planMatch.duration || 1));
           console.log('🎉 Calculated End Date from amount-match:', end, 'Duration:', planMatch.duration);
-          return formatDate(end);
+          return returnDate ? end : formatDate(end);
         }
       } catch (err) {
         console.warn('Error while trying amount-match for plans:', err);
@@ -385,7 +384,7 @@ const Home = () => {
         }
       }
     }
-    return formatDate(endDate);
+    return returnDate ? endDate : formatDate(endDate);
   };
 
   // Helper function to merge user data with payment data
@@ -410,6 +409,19 @@ const Home = () => {
       
       return user;
     });
+  };
+
+  // Add this new function to calculate days between dates
+  const calculateDaysBetweenDates = (paymentDate, endDate) => {
+    if (!paymentDate || !endDate) return null;
+    
+    const oneDay = 24 * 60 * 60 * 1000; // hours*minutes*seconds*milliseconds
+    const start = new Date(paymentDate);
+    const end = new Date(endDate);
+    
+    // Calculate the difference in days
+    const diffDays = Math.round(Math.abs((end - start) / oneDay));
+    return diffDays;
   };
 
   useEffect(() => {
@@ -491,6 +503,16 @@ const Home = () => {
 
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (isModalVisible && selectedUser) {
+      const days = calculateDaysBetweenDates(
+        selectedUser.paymentDate, 
+        selectedUser.endDate || calculateEndDate(selectedUser, true)
+      );
+      console.log(`📅 Days between payment and end date for ${selectedUser.name}:`, days);
+    }
+  }, [isModalVisible, selectedUser]);
 
   const handleSearch = (value) => {
     setSearchText(value);
@@ -923,10 +945,17 @@ const Home = () => {
             <div className="grid grid-cols-2 gap-4 pt-2">
               <DetailItem label="Phone" value={selectedUser.mobile || selectedUser.phone || selectedUser.paymentPhone || 'N/A'} />
               <DetailItem label="Amount Paid" value={selectedUser.orderAmount ? `₹${selectedUser.orderAmount.toLocaleString()}` : (selectedUser.planAmount ? `₹${selectedUser.planAmount.toLocaleString()}` : 'N/A')} />
-              <DetailItem label="Join Date" value={formatDate(selectedUser.paymentDate || selectedUser.joinDate || selectedUser.createdAt)} />
+              <DetailItem label="Payment Date" value={formatDate(selectedUser.paymentDate)} />
               <DetailItem 
                 label={activeTab === 'expiring' ? 'Expiry Date' : 'End Date'} 
                 value={calculateEndDate(selectedUser)} 
+              />
+              <DetailItem 
+                label="Membership Duration" 
+                value={(() => {
+                  const days = calculateDaysBetweenDates(selectedUser.paymentDate, selectedUser.endDate || calculateEndDate(selectedUser, true));
+                  return days !== null ? `${days} days` : 'N/A';
+                })()} 
               />
               <DetailItem 
                 label="Payment Status" 
