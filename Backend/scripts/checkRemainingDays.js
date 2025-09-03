@@ -51,45 +51,88 @@ const getColoredDaysText = (days) => {
   return `\x1b[36m${days}\x1b[0m`; // Cyan for > 30 days
 };
 
-// Format date for display
+// Format date for display, including time
 const formatDate = (date) => {
   if (!date) return 'N/A';
   const d = new Date(date);
   if (isNaN(d)) return 'N/A';
-  return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  return d.toLocaleDateString('en-IN', { 
+    day: '2-digit', 
+    month: 'short', 
+    year: 'numeric', 
+    hour: '2-digit', 
+    minute: '2-digit', 
+    second: '2-digit' 
+  });
 };
 
-// Calculate end date based on payment data and plan
-const calculateEndDate = async (user, payment) => {
-  // If payment has endDate, use it
-  if (payment && payment.endDate) {
-    return payment.endDate;
+// Calculate end date based on latest payment and plan duration
+const calculateEndDate = async (user) => {
+  console.log(`🔍 Calculating end date for user: ${user.name} (${user.email})`);
+  
+  // Find all payments for the user using customerEmail
+  const payments = await Payment.find({ 
+    'customerDetails.customerEmail': { $regex: `^${user.email}$`, $options: 'i' }, // Case-insensitive match
+    paymentStatus: { $in: ['paid', 'SUCCESS'] } // Include both paid and SUCCESS statuses
+  }).lean();
+  
+  console.log(`💰 Found ${payments.length} payment(s) for ${user.email}`);
+  
+  // Sort payments by createdAt (descending) to get the latest
+  const latestPayment = payments.sort((a, b) => {
+    const dateA = a.createdAt;
+    const dateB = b.createdAt;
+    return new Date(dateB) - new Date(dateA); // Latest first
+  })[0];
+  
+  if (latestPayment) {
+    console.log(`✅ Latest payment for ${user.email}:`, {
+      _id: latestPayment._id,
+      orderAmount: latestPayment.orderAmount,
+      paymentStatus: latestPayment.paymentStatus,
+      createdAt: latestPayment.createdAt
+    });
+  } else {
+    console.log(`❌ No valid payment found for ${user.email} - using user.createdAt as fallback`);
   }
   
+  // If no payment exists, use user creation date
+  const startDate = latestPayment ? latestPayment.createdAt : user.createdAt;
+  if (!startDate) {
+    console.log(`❌ No start date available for ${user.email}`);
+    return null;
+  }
+  
+  console.log(`📅 Start date: ${formatDate(startDate)}`);
+  
   // Get all plans from database
-  const plans = await Plan.find({});
+  const plans = await Plan.find({}).lean();
   
-  // Get payment date
-  let paymentDate = payment ? payment.createdAt : user.createdAt;
-  if (!paymentDate) return null;
+  // If no payment, return null (no plan to calculate duration)
+  if (!latestPayment) {
+    console.log(`❌ No payment found for ${user.email} - cannot calculate end date`);
+    return null;
+  }
   
-  // Get plan type and duration
-  let planType = payment ? payment.planType : user.planType;
-  if (!planType || planType === 'no plan') return null;
+  // Find matching plan based on orderAmount
+  const plan = plans.find(p => Number(p.amount) === Number(latestPayment.orderAmount));
   
-  // Find matching plan
-  const plan = plans.find(p => 
-    p.planType.toLowerCase() === planType.toLowerCase() ||
-    p.planType.toLowerCase() === planType.toLowerCase().replace(' plan', '')
-  );
+  if (!plan || !plan.duration) {
+    console.log(`❌ No matching plan found for amount ${latestPayment.orderAmount} or plan has no duration`);
+    return null;
+  }
   
-  if (!plan || !plan.duration) return null;
+  console.log(`📋 Matched plan:`, {
+    planType: plan.planType,
+    amount: plan.amount,
+    duration: plan.duration
+  });
   
   // Calculate end date
-  const startDate = new Date(paymentDate);
   const endDate = new Date(startDate);
-  endDate.setMonth(endDate.getMonth() + plan.duration);
+  endDate.setMonth(endDate.getMonth() + Number(plan.duration));
   
+  console.log(`🎉 Calculated end date: ${formatDate(endDate)}`);
   return endDate;
 };
 
@@ -104,18 +147,18 @@ const checkRemainingDays = async () => {
     const users = await User.find({ 
       accountStatus: 'active',
       paymentStatus: 'paid'
-    });
+    }).lean();
     
     console.log(`📋 Found ${users.length} active users`);
     
     // Get all payments
-    const payments = await Payment.find({ paymentStatus: 'paid' });
+    const payments = await Payment.find({ paymentStatus: { $in: ['paid', 'SUCCESS'] } }).lean();
     
     console.log(`💰 Found ${payments.length} payment records`);
     
     // Process each user
     console.log('\n' + '-'.repeat(80));
-    console.log(sprintf('| %-25s | %-20s | %-15s | %-15s |', 'Name', 'Email', 'End Date', 'Days Left'));
+    console.log(sprintf('| %-25s | %-20s | %-25s | %-15s |', 'Name', 'Email', 'End Date', 'Days Left'));
     console.log('-'.repeat(80));
     
     // Define sprintf function for formatting
@@ -133,13 +176,8 @@ const checkRemainingDays = async () => {
     const userData = [];
     
     for (const user of users) {
-      // Find payment for this user
-      const userPayment = payments.find(p => 
-        p.userId && p.userId.toString() === user._id.toString()
-      );
-      
       // Calculate end date
-      const endDate = await calculateEndDate(user, userPayment);
+      const endDate = await calculateEndDate(user);
       
       // Calculate days remaining
       const daysRemaining = calculateDaysRemaining(endDate);
@@ -166,13 +204,12 @@ const checkRemainingDays = async () => {
     
     // Print sorted user data
     for (const user of userData) {
-      // Print user info with colored days remaining
       console.log(
         sprintf(
-          '| %-25s | %-20s | %-15s | %-15s |',
+          '| %-25s | %-20s | %-25s | %-15s |',
           user.name.substring(0, 25),
           user.email.substring(0, 20),
-          user.formattedEndDate,
+          user.formattedEndDate.substring(0, 25),
           getColoredDaysText(user.daysRemaining)
         )
       );
