@@ -24,10 +24,10 @@ const connectDB = async () => {
   }
 };
 
-// Check for memberships expiring in specified days
+// Check for memberships expiring in specified days and suspend expired ones
 const checkExpiringMemberships = async () => {
   console.log('\n' + '='.repeat(60));
-  console.log('🔍 CHECKING FOR EXPIRING MEMBERSHIPS');
+  console.log('🔍 CHECKING FOR EXPIRING AND EXPIRED MEMBERSHIPS');
   console.log('='.repeat(60));
 
   try {
@@ -35,12 +35,13 @@ const checkExpiringMemberships = async () => {
     const nowStr = now.toISOString().split('T')[0];
     console.log(`📅 Current date: ${nowStr}`);
     
-    // Days before expiration to check
+    // Days before expiration to check for notifications
     const daysToCheck = [10, 5, 1];
     
     let totalExpiringPayments = 0;
     let totalSuccessCount = 0;
     let totalFailureCount = 0;
+    let suspendedAccounts = 0;
     
     // Check for each day threshold
     for (const days of daysToCheck) {
@@ -98,12 +99,45 @@ const checkExpiringMemberships = async () => {
       console.log(`📊 ${days}-day notifications: ${successCount} sent, ${failureCount} failed`);
     }
 
+    // Check for and suspend expired memberships (0 days remaining)
+    console.log('\n🔍 Checking for expired memberships to suspend...');
+    const todayStart = new Date(nowStr);
+    const todayEnd = new Date(todayStart);
+    todayEnd.setDate(todayEnd.getDate() + 1);
+
+    // Find payments that expired yesterday or earlier
+    const expiredPayments = await Payment.find({
+      paymentStatus: 'paid',
+      endDate: { $lt: todayStart }
+    }).populate('userId', 'name email accountStatus');
+
+    console.log(`📋 Found ${expiredPayments.length} expired memberships`);
+
+    // Suspend users with expired memberships
+    for (const payment of expiredPayments) {
+      if (!payment.userId || payment.userId.accountStatus === 'suspended') {
+        continue;
+      }
+
+      try {
+        await User.findByIdAndUpdate(
+          payment.userId._id,
+          { $set: { accountStatus: 'suspended' } }
+        );
+        console.log(`✅ Suspended user: ${payment.userId.email}`);
+        suspendedAccounts++;
+      } catch (error) {
+        console.error(`❌ Failed to suspend user ${payment.userId?.email}:`, error.message);
+      }
+    }
+
     console.log('\n' + '='.repeat(60));
-    console.log('📊 NOTIFICATION SUMMARY');
+    console.log('📊 MEMBERSHIP STATUS SUMMARY');
     console.log('='.repeat(60));
     console.log(`📧 Total expiring memberships: ${totalExpiringPayments}`);
     console.log(`✅ Successful notifications: ${totalSuccessCount}`);
     console.log(`❌ Failed notifications: ${totalFailureCount}`);
+    console.log(`⛔ Suspended expired accounts: ${suspendedAccounts}`);
     console.log('='.repeat(60));
 
   } catch (error) {
