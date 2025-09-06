@@ -397,3 +397,70 @@ export const resetPassword = async (email, otp, newPassword) => {
     throw error;
   }
 };
+
+// Profile completion API functions
+export const completeProfile = async (formData) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE}/api/auth/complete-profile`, {
+      method: 'POST',
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : undefined,
+      },
+      body: formData, // FormData object for file upload
+      credentials: 'include',
+    });
+    
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to complete profile');
+    }
+    return data;
+  } catch (error) {
+    console.error('Complete profile error:', error);
+    throw error;
+  }
+};
+
+export const checkProfileStatus = async (userId) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE}/api/auth/profile-status/${userId}`, {
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : undefined,
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    });
+    
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to check profile status');
+    }
+    return data;
+  } catch (error) {
+    console.error('Check profile status error:', error);
+    throw error;
+  }
+};
+
+export const getProfilePhoto = async (userId) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE}/api/auth/profile-photo/${userId}`, {
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : undefined,
+      },
+      credentials: 'include',
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch profile photo');
+    }
+    
+    return await response.blob();
+  } catch (error) {
+    console.error('Get profile photo error:', error);
+    throw error;
+  }
+};

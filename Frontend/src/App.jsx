@@ -10,10 +10,13 @@ import ContactUs from './pages/ContactUs';
 import Navbar from './components/Navbar';
 import AdminHome from './Admin/AdminHome';
 import AdminLogin from './auth/AdminLogin';
+import CompleteProfile from './auth/CompleteProfile';
 import ForgotPassword from './auth/ForgotPassword';
 import PaymentStatus from './pages/PaymentStatus';
+import Profile from './pages/Profile';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import ProfileCompletionGuard from './components/ProfileCompletionGuard';
 import './App.css';
 
 // Component to handle payment status page access
@@ -30,7 +33,7 @@ const PaymentStatusRedirect = () => {
 
 function AppContent() {
   const location = useLocation();
-  const hideNavbarPaths = ['/login', '/signup', '/verify-otp', '/adminlogin', '/payment-status'];
+  const hideNavbarPaths = ['/login', '/signup', '/verify-otp', '/adminlogin', '/payment-status', '/complete-profile'];
   const showNavbar = !hideNavbarPaths.includes(location.pathname);
   
   return (
@@ -40,8 +43,8 @@ function AppContent() {
       <div className={`min-h-full ${showNavbar ? 'pt-16' : ''}`}>
         <Routes>
           {/* Public Routes */}
-          <Route path="/" element={<Home />} />
-          <Route path="/home" element={<Home />} />
+          <Route path="/" element={<ProfileCompletionGuard><Home /></ProfileCompletionGuard>} />
+          <Route path="/home" element={<ProfileCompletionGuard><Home /></ProfileCompletionGuard>} />
           <Route path="/contact" element={<ContactUs />} />
 
           {/* Payment Status - Only accessible when coming from payment flow */}
@@ -52,10 +55,12 @@ function AppContent() {
           <Route path="/signup" element={<ProtectedRoute requireAuth={false}><SignUp /></ProtectedRoute>} />
           <Route path="/forgot-password" element={<ProtectedRoute requireAuth={false}><ForgotPassword /></ProtectedRoute>} />
           <Route path="/verify-otp" element={<ProtectedRoute requireAuth={false}><OtpVerification /></ProtectedRoute>} />
+          <Route path="/complete-profile" element={<CompleteProfile />} />
           <Route path="/adminlogin" element={<ProtectedRoute requireAuth={false}><AdminLogin /></ProtectedRoute>} />
 
           {/* Protected Routes - Only accessible when authenticated */}
           <Route path="/admin" element={<ProtectedRoute requireAuth={true}><AdminHome /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute requireAuth={true}><ProfileCompletionGuard><Profile /></ProfileCompletionGuard></ProtectedRoute>} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

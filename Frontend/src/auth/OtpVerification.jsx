@@ -85,7 +85,13 @@ const OtpVerification = () => {
         localStorage.removeItem('tempUser');
         
         toast.success('Registration successful!');
-        navigate('/home');
+        
+        // Check if profile is complete
+        if (response.user.profileComplete) {
+          navigate('/home');
+        } else {
+          navigate('/complete-profile');
+        }
       }
     } catch (error) {
       toast.error(error.message || 'Invalid OTP. Please try again.');

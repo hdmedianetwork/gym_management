@@ -1,9 +1,24 @@
 import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import multer from "multer";
 import Admin from "../models/Admin.js";
 import User from "../models/User.js";
 import { generateOTP, sendOTP } from "../utils/emailService.js";
+
+// Configure multer for profile photo upload
+const storage = multer.memoryStorage();
+const upload = multer({ 
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed!'), false);
+    }
+  }
+});
 
 const router = express.Router();
 
@@ -240,7 +255,8 @@ router.post("/verify-otp", async (req, res) => {
         id: user._id, 
         name: user.name, 
         email: user.email,
-        isVerified: user.isVerified
+        isVerified: user.isVerified,
+        profileComplete: user.profileComplete
       } 
     });
   } catch (err) {
@@ -274,7 +290,8 @@ router.post("/login", async (req, res) => {
         id: user._id, 
         name: user.name, 
         email: user.email,
-        isVerified: user.isVerified
+        isVerified: user.isVerified,
+        profileComplete: user.profileComplete
       } 
     });
   } catch (err) {
@@ -531,6 +548,98 @@ router.post("/reset-password", async (req, res) => {
   } catch (err) {
     console.error('Reset password error:', err);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Complete Profile - After OTP verification
+router.post("/complete-profile", upload.single('profilePhoto'), async (req, res) => {
+  try {
+    const { userId, dateOfBirth, address, branch, weight, height } = req.body;
+    
+    if (!userId || !dateOfBirth || !address || !branch || !weight || !height) {
+      return res.status(400).json({ error: "All fields are required" });
+    }
+    
+    // Validate branch
+    if (!['mansarover', 'sitapura'].includes(branch.toLowerCase())) {
+      return res.status(400).json({ error: "Invalid branch selection" });
+    }
+    
+    // Find user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    
+    if (!user.isVerified) {
+      return res.status(400).json({ error: "User not verified" });
+    }
+    
+    // Update user profile
+    user.dateOfBirth = new Date(dateOfBirth);
+    user.address = address.trim();
+    user.branch = branch.toLowerCase();
+    user.weight = parseFloat(weight);
+    user.height = parseFloat(height);
+    user.profileComplete = true;
+    
+    // Handle profile photo
+    if (req.file) {
+      user.profilePhoto = req.file.buffer;
+    }
+    
+    await user.save();
+    
+    // Generate new token with updated user info
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+    
+    res.json({ 
+      success: true,
+      message: "Profile completed successfully",
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        profileComplete: user.profileComplete
+      }
+    });
+  } catch (err) {
+    console.error('Complete profile error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get user profile photo
+router.get("/profile-photo/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const user = await User.findById(userId);
+    
+    if (!user || !user.profilePhoto) {
+      return res.status(404).json({ error: "Profile photo not found" });
+    }
+    
+    res.set('Content-Type', 'image/jpeg');
+    res.send(user.profilePhoto);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Check profile completion status
+router.get("/profile-status/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const user = await User.findById(userId).select('profileComplete');
+    
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    
+    res.json({ profileComplete: user.profileComplete });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 

@@ -38,7 +38,13 @@ const Login = () => {
           localStorage.setItem('user', JSON.stringify(response.user));
         }
         toast.success('Login successful!');
-        navigate('/home');
+        
+        // Check if profile is complete
+        if (response.user.profileComplete) {
+          navigate('/home');
+        } else {
+          navigate('/complete-profile');
+        }
       }
     } catch (error) {
       toast.error(error.message || 'Login failed. Please try again.');
