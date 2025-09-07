@@ -7,7 +7,7 @@ export const sendOTP = async (email, otp) => {
       throw new Error('Gmail credentials not configured in environment variables');
     }
 
-    console.log('Using Gmail account:', process.env.GMAIL_USER);
+    // console.log('Using Gmail account:', process.env.GMAIL_USER);
     
     // Create transporter using Gmail SMTP
     const transporter = nodemailer.createTransport({
@@ -39,10 +39,10 @@ export const sendOTP = async (email, otp) => {
       `,
     });
 
-    console.log('Email sent successfully to:', email);
+    // console.log('Email sent successfully to:', email);
     return true;
   } catch (error) {
-    console.error('Error sending email:', error);
+    // console.error('Error sending email:', error);
     return false;
   }
 };
@@ -59,7 +59,7 @@ export const sendExpirationNotification = async (email, daysRemaining = null) =>
       throw new Error('Gmail credentials not configured in environment variables');
     }
 
-    console.log('Sending expiration notification to:', email);
+    // console.log('Sending expiration notification to:', email);
     
     // Create transporter using Gmail SMTP
     const transporter = nodemailer.createTransport({
@@ -92,10 +92,10 @@ export const sendExpirationNotification = async (email, daysRemaining = null) =>
       `,
     });
 
-    console.log('Expiration notification sent successfully to:', email);
+    // console.log('Expiration notification sent successfully to:', email);
     return true;
   } catch (error) {
-    console.error('Error sending expiration notification:', error);
+    // console.error('Error sending expiration notification:', error);
     return false;
   }
 };

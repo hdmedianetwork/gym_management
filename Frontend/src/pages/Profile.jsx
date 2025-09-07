@@ -62,7 +62,7 @@ const Profile = () => {
       setProfilePhoto(photoUrl);
     } catch (error) {
       // User might not have a profile photo, which is fine
-      console.log('No profile photo found');
+      // console.log('No profile photo found');
     }
   };
 

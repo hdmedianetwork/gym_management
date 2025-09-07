@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getAllUsers, getSuccessfulPayments, syncUsersWithPayments, updateUserStatus, getAllPlans } from '../utils/api';
+import { getAllUsers, getSuccessfulPayments, syncUsersWithPayments, updateUserStatus, getAllPlans, getProfilePhoto } from '../utils/api';
 import { Card, Table, Modal, Divider } from 'antd';
 import { UserOutlined, ClockCircleOutlined, StopOutlined, CloseOutlined, IdcardOutlined } from '@ant-design/icons';
 import TerminatedUsers from './TerminatedUsers';
@@ -56,6 +56,7 @@ const Home = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null); // 'suspend' | 'terminate' | 'inactive' | null
   const [showPersonalDetails, setShowPersonalDetails] = useState(false);
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState({});
 
   // Define columns inside component to access calculateEndDate
   const columns = {
@@ -241,7 +242,7 @@ const Home = () => {
 
   // Helper function to calculate end date based on plan duration
   const calculateEndDate = (user, returnDate = false) => {
-    console.log('🔍 CALCULATING END DATE FOR USER:', user.name, user.email);
+    // console.log('🔍 CALCULATING END DATE FOR USER:', user.name, user.email);
     
     // If user already has an end date, return it
     if (user.endDate) {
@@ -251,9 +252,9 @@ const Home = () => {
 
     // Try to calculate based on plan type and payment date
     const paymentDate = user.paymentDate;
-    console.log('📅 Payment/Join Date:', paymentDate);
+    // console.log('📅 Payment/Join Date:', paymentDate);
     if (!paymentDate) {
-      console.log('❌ No payment date found - cannot calculate end date');
+      // console.log('❌ No payment date found - cannot calculate end date');
       return 'N/A';
     }
 
@@ -268,11 +269,11 @@ const Home = () => {
         });
 
         if (planMatch) {
-          console.log('🎯 Found plan by paid amount match:', { paidAmount, planMatch });
+          // console.log('🎯 Found plan by paid amount match:', { paidAmount, planMatch });
           const start = new Date(paymentDate);
           const end = new Date(start);
           end.setMonth(end.getMonth() + Number(planMatch.duration || 1));
-          console.log('🎉 Calculated End Date from amount-match:', end, 'Duration:', planMatch.duration);
+          // console.log('🎉 Calculated End Date from amount-match:', end, 'Duration:', planMatch.duration);
           return returnDate ? end : formatDate(end);
         }
       } catch (err) {
@@ -288,23 +289,23 @@ const Home = () => {
       payment.customerDetails?.customer_email?.toLowerCase() === user.email?.toLowerCase()
     );
     
-    console.log('💰 User Payment Data:', userPayment);
-    console.log('📊 Available Plans Data:', plansData);
+    // console.log('💰 User Payment Data:', userPayment);
+    // console.log('📊 Available Plans Data:', plansData);
     
     if (userPayment?.planType) {
       planType = userPayment.planType;
-      console.log('✅ Found plan type from payment:', planType);
+      // console.log('✅ Found plan type from payment:', planType);
     } else if (user.planType && user.planType !== 'no plan') {
       planType = user.planType;
-      console.log('✅ Found plan type from user:', planType);
+      // console.log('✅ Found plan type from user:', planType);
     }
 
-    console.log('🎯 Final Plan Type:', planType);
+    // console.log('🎯 Final Plan Type:', planType);
     if (!planType) {
-      console.log('❌ No plan type found - using fallback');
+      // console.log('❌ No plan type found - using fallback');
       // Fallback: if user has createdAt date, use basic plan
       if (user.createdAt) {
-        console.log('🔄 Using fallback: basic plan with createdAt date');
+        // console.log('🔄 Using fallback: basic plan with createdAt date');
         planType = 'basic';
       } else {
         return 'N/A';
@@ -317,9 +318,9 @@ const Home = () => {
       p.planType.toLowerCase() === planType.toLowerCase().replace(' plan', '')
     );
 
-    console.log('📋 Matched Plan:', plan);
+    // console.log('📋 Matched Plan:', plan);
     if (!plan || !plan.duration) {
-      console.log('❌ No matching plan found or no duration');
+      // console.log('❌ No matching plan found or no duration');
       return 'N/A';
     }
 
@@ -328,11 +329,11 @@ const Home = () => {
     const endDate = new Date(startDate);
     endDate.setMonth(endDate.getMonth() + plan.duration);
     
-    console.log('🎉 Calculated End Date:', endDate, 'Duration:', plan.duration, 'months');
+    // console.log('🎉 Calculated End Date:', endDate, 'Duration:', plan.duration, 'months');
     // If no planType found, try to infer plan from amount paid
     if (!planType) {
       const paidAmount = Number(userPayment?.orderAmount || user.planAmount || user.orderAmount || 0);
-      console.log('🔎 Trying to infer plan from paid amount:', paidAmount);
+      // console.log('🔎 Trying to infer plan from paid amount:', paidAmount);
       if (paidAmount > 0 && plansData && plansData.length > 0) {
         // Normalize plans with numeric fields
         const normalized = plansData.map(p => ({
@@ -342,7 +343,7 @@ const Home = () => {
           total: Number(p.amount) * Number(p.duration || 1)
         }));
 
-        console.log('📋 Plans (amount/duration/total):', normalized);
+        // console.log('📋 Plans (amount/duration/total):', normalized);
 
         // 1) Exact match to single-month plan amount
         let planByAmount = normalized.find(p => p.amount === paidAmount);
@@ -369,17 +370,17 @@ const Home = () => {
           // Only pick nearest if it's reasonably close (e.g., within 20 rupees or within 5% of paidAmount)
           if (best && (bestDiff <= 20 || bestDiff / Math.max(1, paidAmount) <= 0.05)) {
             planByAmount = best;
-            console.log('ℹ️ Nearest-plan fallback chosen with diff', bestDiff);
+            // console.log('ℹ️ Nearest-plan fallback chosen with diff', bestDiff);
           } else {
-            console.log('ℹ️ Nearest-plan found but difference too large:', bestDiff);
+            // console.log('ℹ️ Nearest-plan found but difference too large:', bestDiff);
           }
         }
 
         if (planByAmount) {
           planType = planByAmount.planType;
-          console.log('✅ Inferred plan from amount:', planByAmount);
+          // console.log('✅ Inferred plan from amount:', planByAmount);
         } else {
-          console.log('❌ Could not infer plan from amount:', paidAmount);
+          // console.log('❌ Could not infer plan from amount:', paidAmount);
         }
       }
     }
@@ -442,9 +443,9 @@ const Home = () => {
         setPlansData(plans);
         // Print plan durations to browser console for debugging
         try {
-          console.log('📦 Plans fetched (planType / amount / duration):', plans.map(p => ({ planType: p.planType, amount: Number(p.amount), duration: Number(p.duration || 1) })));
+          // console.log('📦 Plans fetched (planType / amount / duration):', plans.map(p => ({ planType: p.planType, amount: Number(p.amount), duration: Number(p.duration || 1) })));
         } catch (e) {
-          console.log('📦 Plans fetched (raw):', plans);
+          // console.log('📦 Plans fetched (raw):', plans);
         }
         
         // Process payments data
@@ -458,33 +459,33 @@ const Home = () => {
           setPaymentsData(payments);
           
           // Log payment data for debugging
-          console.log('\n' + '='.repeat(60));
-          console.log('💰 SUCCESSFUL PAYMENTS DATA');
-          console.log('='.repeat(60));
-          console.log(`📊 Total Payments in Database: ${paymentsRes.transactions.length}`);
-          console.log(`✅ Total Successful Payments: ${payments.length}`);
-          console.log(`💸 Total Successful Amount: ₹${paymentsRes.cashfreeSummary?.totalAmount || 0}`);
+          // console.log('\n' + '='.repeat(60));
+          // console.log('💰 SUCCESSFUL PAYMENTS DATA');
+          // console.log('='.repeat(60));
+          // console.log(`📊 Total Payments in Database: ${paymentsRes.transactions.length}`);
+          // console.log(`✅ Total Successful Payments: ${payments.length}`);
+          // console.log(`💸 Total Successful Amount: ₹${paymentsRes.cashfreeSummary?.totalAmount || 0}`);
           
-          payments.forEach((payment, index) => {
-            console.log(`--- Payment ${index + 1} ---`);
-            console.log(`👤 Name: ${payment.customerDetails?.customer_name || 'N/A'}`);
-            console.log(`📧 Email: ${payment.customerDetails?.customer_email || 'N/A'}`);
-            console.log(`💰 Amount: ₹${payment.orderAmount}`);
-            console.log(`✅ Status: ${payment.orderStatus}`);
-            console.log('');
-          });
-          console.log('='.repeat(60));
+          // payments.forEach((payment, index) => {
+          //   console.log(`--- Payment ${index + 1} ---`);
+          //   console.log(`👤 Name: ${payment.customerDetails?.customer_name || 'N/A'}`);
+          //   console.log(`📧 Email: ${payment.customerDetails?.customer_email || 'N/A'}`);
+          //   console.log(`💰 Amount: ₹${payment.orderAmount}`);
+          //   console.log(`✅ Status: ${payment.orderStatus}`);
+          //   console.log('');
+          // });
+          // console.log('='.repeat(60));
         }
         
         // Merge users with payment data
         const mergedUsers = mergeUsersWithPayments(users, payments);
         
-        console.log('\n🔄 MERGED USER DATA:');
-        mergedUsers.forEach(user => {
-          if (user.orderAmount) {
-            console.log(`👤 ${user.name} (${user.email}): ₹${user.orderAmount}`);
-          }
-        });
+        // console.log('\n🔄 MERGED USER DATA:');
+        // mergedUsers.forEach(user => {
+        //   if (user.orderAmount) {
+        //     console.log(`👤 ${user.name} (${user.email}): ₹${user.orderAmount}`);
+        //   }
+        // });
         
         const categorized = categorizeUsers(mergedUsers);
         setUsersData(categorized);
@@ -494,7 +495,7 @@ const Home = () => {
         setTableColumns(columns.active.filter(col => col.key !== 'planType'));
         
       } catch (err) {
-        console.error('Failed to fetch data:', err);
+        // console.error('Failed to fetch data:', err);
       } finally {
         setIsLoading(false);
       }
@@ -509,7 +510,7 @@ const Home = () => {
         selectedUser.paymentDate, 
         selectedUser.endDate || calculateEndDate(selectedUser, true)
       );
-      console.log(`📅 Days between payment and end date for ${selectedUser.name}:`, days);
+      // console.log(`📅 Days between payment and end date for ${selectedUser.name}:`, days);
     }
   }, [isModalVisible, selectedUser]);
 
@@ -521,9 +522,10 @@ const Home = () => {
     }
     const filtered = tableData.filter(item => 
       Object.values(item).some(val => 
-        String(val).toLowerCase().includes(value.toLowerCase())
+        val && val.toString().toLowerCase().includes(value.toLowerCase())
       )
     );
+    // console.log('Filtered results:', filtered.length);
     setFilteredData(filtered);
   };
 
@@ -541,13 +543,36 @@ const Home = () => {
     );
   };
 
-  const handleRowClick = (record) => {
-    setSelectedUser(record);
-    setIsModalVisible(true);
-  };
+  // Preload profile photos for all users
+  useEffect(() => {
+    const preloadProfilePhotos = async () => {
+      const users = [...usersData.active, ...usersData.expiring, ...usersData.suspended];
+      
+      for (const user of users) {
+        if (!profilePhotoUrl[user._id]) {
+          try {
+            const photoBlob = await getProfilePhoto(user._id);
+            if (photoBlob) {
+              const photoUrl = URL.createObjectURL(photoBlob);
+              setProfilePhotoUrl(prev => ({
+                ...prev,
+                [user._id]: photoUrl
+              }));
+            }
+          } catch (error) {
+            // console.error(`Error preloading photo for user ${user._id}:`, error);
+          }
+        }
+      }
+    };
 
-  const handleAddMember = () => {
-    setShowAddUserModal(true);
+    preloadProfilePhotos();
+  }, [usersData]);
+
+  const handleUserClick = (user) => {
+    // console.log('User clicked:', user);
+    setSelectedUser(user);
+    setIsModalVisible(true);
   };
 
   const handleCloseModal = () => {
@@ -555,27 +580,55 @@ const Home = () => {
     setSelectedUser(null);
   };
 
+  const handleAddMember = () => {
+    setShowAddUserModal(true);
+  };
+
+  // Clean up all object URLs on unmount
+  useEffect(() => {
+    return () => {
+      Object.values(profilePhotoUrl).forEach(url => {
+        if (url) URL.revokeObjectURL(url);
+      });
+    };
+  }, [profilePhotoUrl]);
+
+  const handleRowClick = (record) => {
+    // console.log('Row clicked:', record);
+    setSelectedUser(record);
+    setIsModalVisible(true);
+  };
+
   const handleSyncUsers = async () => {
     setIsSyncing(true);
     try {
-      console.log('\n' + '='.repeat(60));
-      console.log('🔄 STARTING USER SYNC WITH PAYMENTS');
-      console.log('='.repeat(60));
+      // console.log('\n' + '='.repeat(60));
+      // console.log('🔄 STARTING USER SYNC WITH PAYMENTS');
+      // console.log('='.repeat(60));
       
       const syncResult = await syncUsersWithPayments();
       
+      // console.log('\n' + '='.repeat(60));
+      // console.log('✅ USER SYNC COMPLETED');
+      // console.log('='.repeat(60));
+      // console.log('📊 SYNC SUMMARY:');
+      // console.log(`- Total users processed: ${syncResult.totalUsers}`);
+      // console.log(`- Users updated: ${syncResult.updatedCount}`);
+      // console.log(`- Users with payment data: ${syncResult.usersWithPaymentData}`);
+      // console.log(`- Users with plan info: ${syncResult.usersWithPlanInfo}`);
+      // console.log('='.repeat(60));
       if (syncResult.success) {
-        console.log('\n✅ Sync completed successfully!');
-        console.log(`📊 Total payments processed: ${syncResult.totalPayments}`);
-        console.log(`👥 Users updated: ${syncResult.updatedUsers.length}`);
+        // console.log('\n✅ Sync completed successfully!');
+        // console.log(`📊 Total payments processed: ${syncResult.totalPayments}`);
+        // console.log(`👥 Users updated: ${syncResult.updatedUsers.length}`);
         
         if (syncResult.updatedUsers.length > 0) {
-          console.log('\n📋 Updated users:');
+          // console.log('\n📋 Updated users:');
           syncResult.updatedUsers.forEach(user => {
-            console.log(`👤 ${user.name} (${user.email}): ${user.changes.join(', ')}`);
+            // console.log(`👤 ${user.name} (${user.email}): ${user.changes.join(', ')}`);
           });
         } else {
-          console.log('ℹ️  No users needed updates');
+          // console.log('ℹ️  No users needed updates');
         }
         
         // Refresh users and payments, then merge (same as initial load)
@@ -584,7 +637,14 @@ const Home = () => {
         alert(`Sync completed! ${syncResult.updatedUsers.length} users updated. Check console for details.`);
       }
     } catch (error) {
-      console.error('❌ Sync failed:', error);
+      // console.error('Error syncing users with payments:', error);
+      // console.log('Error details:', {
+      //   message: error.message,
+      //   response: error.response?.data,
+      //   status: error.response?.status
+      // });
+
+      // console.error('❌ Sync failed:', error);
       alert('Sync failed: ' + error.message);
     } finally {
       setIsSyncing(false);
@@ -895,7 +955,7 @@ const Home = () => {
               dataSource={filteredData} 
               rowKey="_id"
               onRow={(record) => ({
-                onClick: () => handleRowClick(record),
+                onClick: () => handleUserClick(record),
                 className: 'cursor-pointer hover:bg-gray-50'
               })}
               pagination={false}
@@ -924,21 +984,21 @@ const Home = () => {
               <div className="flex items-start space-x-4">
                 <div className="relative">
                   <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center text-2xl text-blue-500 overflow-hidden">
-                    {selectedUser.profileImage ? (
-                      <img 
-                        src={selectedUser.profileImage} 
-                        alt={selectedUser.name}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.parentElement.innerHTML = '<UserOutlined />';
-                          e.target.parentElement.className = 'w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center text-2xl text-blue-500';
-                        }}
-                      />
-                    ) : (
-                      <UserOutlined />
-                    )}
-                  </div>
+                  {profilePhotoUrl[selectedUser._id] ? (
+                    <img 
+                      src={profilePhotoUrl[selectedUser._id]} 
+                      alt={selectedUser.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        const fallback = e.target.nextElementSibling;
+                        if (fallback) fallback.style.display = 'flex';
+                      }}
+                    />
+                  ) : (
+                    <UserOutlined />
+                  )}
+                </div>
                 </div>
                 <div className="relative">
                   <button 

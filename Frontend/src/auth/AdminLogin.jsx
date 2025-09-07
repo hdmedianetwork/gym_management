@@ -25,7 +25,7 @@ const AdminLogin = () => {
     try {
       // First check if admin exists
       const checkRes = await api.post("/check-admin-email", { email });
-      console.log("Admin check response:", checkRes.data);
+      // console.log("Admin check response:", checkRes.data);
       
       if (!checkRes.data.found) {
         toast.error("Admin not found");

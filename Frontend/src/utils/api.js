@@ -444,6 +444,20 @@ export const checkProfileStatus = async (userId) => {
   }
 };
 
+// Helper to check if response is successful (2xx)
+const checkStatus = (response) => {
+  if (response.ok) {
+    return response;
+  }
+  // Don't log 404 errors to console
+  if (response.status !== 404) {
+    console.error(`Request failed with status ${response.status}: ${response.statusText}`);
+  }
+  const error = new Error(response.statusText);
+  error.response = response;
+  throw error;
+};
+
 export const getProfilePhoto = async (userId) => {
   try {
     const token = localStorage.getItem('token');
@@ -452,15 +466,36 @@ export const getProfilePhoto = async (userId) => {
         'Authorization': token ? `Bearer ${token}` : undefined,
       },
       credentials: 'include',
+    }).catch(error => {
+      // Network errors are caught here
+      console.error('Network error fetching profile photo:', error);
+      return null;
     });
     
-    if (!response.ok) {
-      throw new Error('Failed to fetch profile photo');
-    }
+    if (!response) return null; // In case of network error
     
-    return await response.blob();
+    try {
+      // This will throw for non-2xx responses
+      await checkStatus(response);
+      
+      // Only try to get blob if response has content
+      const contentLength = response.headers.get('content-length');
+      if (contentLength && parseInt(contentLength) > 0) {
+        return await response.blob();
+      }
+      return null;
+    } catch (error) {
+      // 404 and other non-2xx responses are handled here
+      if (error.response && error.response.status === 404) {
+        return null; // No profile photo found
+      }
+      throw error; // Re-throw other errors
+    }
   } catch (error) {
-    console.error('Get profile photo error:', error);
-    throw error;
+    // Only log unexpected errors
+    if (error.message !== 'Failed to fetch') { // Skip network errors already logged
+      console.error('Unexpected error in getProfilePhoto:', error);
+    }
+    return null;
   }
 };

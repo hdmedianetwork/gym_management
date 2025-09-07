@@ -85,42 +85,41 @@ export const fetchAllTransactions = async (orderIds) => {
 
 // Function to print transactions in a formatted way
 export const printTransactions = (transactions) => {
-  console.log('\n=== CASHFREE TRANSACTIONS ===\n');
-  
   if (!transactions || transactions.length === 0) {
     console.log('No transactions found.');
     return;
   }
   
-  transactions.forEach((transaction, index) => {
-    console.log(`--- Transaction ${index + 1} ---`);
-    console.log(`Order ID: ${transaction.orderId}`);
-    console.log(`Amount: ₹${transaction.orderAmount} ${transaction.orderCurrency}`);
-    console.log(`Status: ${transaction.orderStatus}`);
-    console.log(`Customer: ${transaction.customerDetails?.customer_name || 'N/A'}`);
-    console.log(`Email: ${transaction.customerDetails?.customer_email || 'N/A'}`);
-    console.log(`Phone: ${transaction.customerDetails?.customer_phone || 'N/A'}`);
-    console.log(`Created: ${new Date(transaction.createdAt).toLocaleString()}`);
-    
-    // Print payment details
-    if (transaction.paymentDetails && transaction.paymentDetails.length > 0) {
-      console.log('Payment Details:');
-      transaction.paymentDetails.forEach((payment, paymentIndex) => {
-        console.log(`  Payment ${paymentIndex + 1}:`);
-        console.log(`    Payment ID: ${payment.cf_payment_id}`);
-        console.log(`    Payment Status: ${payment.payment_status}`);
-        console.log(`    Payment Method: ${payment.payment_group || 'N/A'}`);
-        console.log(`    Payment Amount: ₹${payment.payment_amount || 'N/A'}`);
-        console.log(`    Payment Time: ${payment.payment_time ? new Date(payment.payment_time).toLocaleString() : 'N/A'}`);
-      });
-    } else {
-      console.log('Payment Details: No payments found');
-    }
-    
-    console.log(''); // Empty line for spacing
-  });
+  // Sort transactions by date (newest first) and get the latest one
+  const sortedTransactions = [...transactions].sort((a, b) => 
+    new Date(b.createdAt) - new Date(a.createdAt)
+  );
   
-  console.log(`=== Total Transactions: ${transactions.length} ===\n`);
+  const latestTransaction = sortedTransactions[0];
+  
+  // Print only the latest transaction
+  console.log('\n=== LATEST TRANSACTION ===\n');
+  console.log(`Order ID: ${latestTransaction.orderId}`);
+  console.log(`Amount: ₹${latestTransaction.orderAmount} ${latestTransaction.orderCurrency}`);
+  console.log(`Status: ${latestTransaction.orderStatus}`);
+  console.log(`Customer: ${latestTransaction.customerDetails?.customer_name || 'N/A'}`);
+  console.log(`Date: ${new Date(latestTransaction.createdAt).toLocaleString()}`);
+  
+  // Payment details for the latest transaction
+  if (latestTransaction.paymentDetails && latestTransaction.paymentDetails.length > 0) {
+    const payment = latestTransaction.paymentDetails[0]; // Get the first payment
+    console.log('\nPayment Details:');
+    console.log(`  Status: ${payment.payment_status}`);
+    console.log(`  Amount: ₹${payment.payment_amount}`);
+    console.log(`  Method: ${payment.payment_method?.card_type || payment.payment_method || 'N/A'}`);
+    console.log(`  Time: ${payment.payment_time || 'N/A'}`);
+    console.log(`  Message: ${payment.payment_message || 'N/A'}`);
+  }
+  
+  // Print summary
+  console.log('\n=== TRANSACTION SUMMARY ===');
+  console.log(`Total Transactions: ${transactions.length}`);
+  console.log('='.repeat(25) + '\n');
 };
 
 // Function to get transaction summary

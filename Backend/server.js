@@ -20,12 +20,12 @@ const requiredEnvVars = ['MONGO_URI', 'JWT_SECRET', 'GMAIL_USER', 'GMAIL_APP_PAS
 const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
 
 if (missingVars.length > 0) {
-  console.error('Missing required environment variables:', missingVars.join(', '));
-  console.log('Current .env location:', path.join(__dirname, '.env'));
+  // console.error('Missing required environment variables:', missingVars.join(', '));
+  // console.log('Current .env location:', path.join(__dirname, '.env'));
   process.exit(1);
 }
 
-console.log('Environment variables loaded successfully');
+// console.log('Environment variables loaded successfully');
 
 const app = express();
 app.use(express.json());
@@ -73,4 +73,6 @@ mongoose.connect(process.env.MONGO_URI)
       console.log("⏰ Membership expiration check cron job started");
     });
   })
-  .catch(err => console.error(err));
+  .catch(err => {
+    // console.error(err)
+  });
