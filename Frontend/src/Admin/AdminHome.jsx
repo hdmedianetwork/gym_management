@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getAllUsers, getSuccessfulPayments, syncUsersWithPayments, updateUserStatus, getAllPlans } from '../utils/api';
-import { Card, Table, Modal } from 'antd';
-import { UserOutlined, ClockCircleOutlined, StopOutlined, CloseOutlined } from '@ant-design/icons';
+import { Card, Table, Modal, Divider } from 'antd';
+import { UserOutlined, ClockCircleOutlined, StopOutlined, CloseOutlined, IdcardOutlined } from '@ant-design/icons';
 import TerminatedUsers from './TerminatedUsers';
 import AddUserModal from './AddUserModal';
 import EditUserModal from './EditUserModal';
@@ -55,6 +55,7 @@ const Home = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null); // 'suspend' | 'terminate' | 'inactive' | null
+  const [showPersonalDetails, setShowPersonalDetails] = useState(false);
 
   // Define columns inside component to access calculateEndDate
   const columns = {
@@ -249,13 +250,11 @@ const Home = () => {
     }
 
     // Try to calculate based on plan type and payment date
-    let paymentDate = user.paymentDate;
+    const paymentDate = user.paymentDate;
     console.log('📅 Payment/Join Date:', paymentDate);
     if (!paymentDate) {
-      console.log('❌ No payment date found - using fallback current date');
-      // Fallback: use current date as payment date
-      paymentDate = new Date().toISOString();
-      console.log('🔄 Using fallback payment date:', paymentDate);
+      console.log('❌ No payment date found - cannot calculate end date');
+      return 'N/A';
     }
 
     // First: if we have a paid amount, try to match it to a plan in the plans collection
@@ -922,9 +921,24 @@ const Home = () => {
         {selectedUser && (
           <div className="space-y-4">
             <div className="flex items-start justify-between pb-4 border-b border-gray-100">
-              <div className="flex items-center space-x-4">
-                <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center text-2xl text-blue-500">
-                  <UserOutlined />
+              <div className="flex items-start space-x-4">
+                <div className="relative">
+                  <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center text-2xl text-blue-500 overflow-hidden">
+                    {selectedUser.profileImage ? (
+                      <img 
+                        src={selectedUser.profileImage} 
+                        alt={selectedUser.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.parentElement.innerHTML = '<UserOutlined />';
+                          e.target.parentElement.className = 'w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center text-2xl text-blue-500';
+                        }}
+                      />
+                    ) : (
+                      <UserOutlined />
+                    )}
+                  </div>
                 </div>
                 <div className="relative">
                   <button 
@@ -975,9 +989,52 @@ const Home = () => {
             <div className="pt-4 mt-4 border-t border-gray-100">
               <h4 className="font-medium text-gray-700 mb-2">Actions</h4>
               <div className="flex flex-wrap gap-3 justify-between w-full items-center">
+                <button 
+                  onClick={() => setShowPersonalDetails(!showPersonalDetails)}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+                >
+                  <IdcardOutlined />
+                  {showPersonalDetails ? 'Hide Personal Details' : 'Show Personal Details'}
+                </button>
                 <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
                   View Payment History
                 </button>
+              </div>
+
+              {showPersonalDetails && (
+                <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                  <h4 className="font-medium text-gray-700 mb-3">Personal Details</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <DetailItem 
+                      label="Date of Birth" 
+                      value={selectedUser.dob || selectedUser.dateOfBirth 
+                        ? new Date(selectedUser.dob || selectedUser.dateOfBirth).toLocaleDateString('en-IN', { 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                          })
+                        : 'N/A'
+                      } 
+                    />
+                    <DetailItem label="Weight" value={selectedUser.weight ? `${selectedUser.weight} kg` : 'N/A'} />
+                    <DetailItem label="Height" value={selectedUser.height ? `${selectedUser.height} cm` : 'N/A'} />
+                    <DetailItem label="Branch" value={selectedUser.branch || 'N/A'} />
+                    <div className="md:col-span-2">
+                      <DetailItem label="Address" value={selectedUser.address || 'N/A'} />
+                    </div>
+                    {selectedUser.emergencyContact && (
+                      <div className="md:col-span-2 mt-2 pt-2 border-t border-gray-200">
+                        <h5 className="font-medium text-gray-700 mb-2">Emergency Contact</h5>
+                        <DetailItem label="Name" value={selectedUser.emergencyContact.name || 'N/A'} />
+                        <DetailItem label="Phone" value={selectedUser.emergencyContact.phone || 'N/A'} />
+                        <DetailItem label="Relation" value={selectedUser.emergencyContact.relation || 'N/A'} />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              <div className="pt-4 border-t border-gray-100">
                 <div className="flex items-center gap-2">
                   {selectedUser && String(selectedUser.accountStatus || '').toLowerCase() === 'suspended' ? (
                     <button

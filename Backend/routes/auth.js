@@ -400,8 +400,8 @@ router.patch('/admin/users/:id', async (req, res) => {
     const isManual = (user.planType || '').toLowerCase() === 'manual';
 
     // Whitelists
-    const manualAllowed = ['name', 'email', 'mobile', 'accountStatus', 'paymentStatus', 'planAmount'];
-    const signupAllowed = ['name', 'email', 'mobile'];
+    const manualAllowed = ['name', 'email', 'mobile', 'accountStatus', 'paymentStatus', 'planAmount', 'dateOfBirth', 'height', 'weight', 'branch', 'address'];
+    const signupAllowed = ['name', 'email', 'mobile', 'dateOfBirth', 'height', 'weight', 'branch', 'address'];
     const allowed = isManual ? manualAllowed : signupAllowed;
 
     // Build update object
