@@ -60,6 +60,31 @@ app.use("/api/payment", cashfreeRoutes);
 app.use("/api/plans", planRoutes);
 app.use("/api/notifications", notificationRoutes);
 
+// Branches route
+app.get("/api/branches", async (req, res) => {
+  try {
+    // Import Branches model here to avoid circular dependency
+    const Branches = (await import("./models/Branches.js")).default;
+    
+    // Fetch branches from database
+    const branchesData = await Branches.findOne({});
+    
+    if (!branchesData) {
+      return res.status(404).json({ success: false, error: 'No branches found' });
+    }
+    
+    // Convert to array of branch names, filtering out empty values
+    const branches = [];
+    if (branchesData.branch1) branches.push(branchesData.branch1);
+    if (branchesData.branch2) branches.push(branchesData.branch2);
+    
+    res.status(200).json({ success: true, branches });
+  } catch (error) {
+    console.error('Error fetching branches:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch branches' });
+  }
+});
+
 // Connect MongoDB
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {

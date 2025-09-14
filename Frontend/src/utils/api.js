@@ -398,6 +398,29 @@ export const resetPassword = async (email, otp, newPassword) => {
   }
 };
 
+// Branch API functions
+export const fetchBranches = async () => {
+  try {
+    const response = await fetch(`${API_BASE}/api/auth/branches`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    });
+    
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to fetch branches');
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Fetch branches error:', error);
+    throw error;
+  }
+};
+
 // Profile completion API functions
 export const completeProfile = async (formData) => {
   try {

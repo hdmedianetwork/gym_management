@@ -18,7 +18,7 @@ const userSchema = new mongoose.Schema({
   profilePhoto: { type: Buffer }, // Store image as binary data
   dateOfBirth: { type: Date },
   address: { type: String },
-  branch: { type: String, enum: ['mansarover', 'sitapura'] },
+  branch: { type: String },
   weight: { type: Number }, // in kg
   height: { type: Number } // in cm
 }, { timestamps: true });

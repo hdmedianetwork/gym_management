@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { completeProfile } from '../utils/api';
+import { completeProfile, fetchBranches } from '../utils/api';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -16,7 +16,29 @@ const CompleteProfile = () => {
   });
   const [previewImage, setPreviewImage] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [branches, setBranches] = useState([]);
+  const [isLoadingBranches, setIsLoadingBranches] = useState(true);
   const navigate = useNavigate();
+
+  // Fetch branches when component mounts
+  useEffect(() => {
+    const getBranches = async () => {
+      try {
+        const response = await fetchBranches();
+        if (response && response.success) {
+          // The API now returns branches as an array of strings
+          setBranches(response.branches || []);
+        }
+      } catch (error) {
+        console.error('Error fetching branches:', error);
+        toast.error('Failed to load branches. Please try again later.');
+      } finally {
+        setIsLoadingBranches(false);
+      }
+    };
+
+    getBranches();
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -222,15 +244,20 @@ const CompleteProfile = () => {
                   Preferred Branch *
                 </label>
                 <select
+                  id="branch"
                   name="branch"
                   value={formData.branch}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
+                  disabled={isLoadingBranches}
                 >
-                  <option value="">Select a branch</option>
-                  <option value="mansarover">Mansarovar</option>
-                  <option value="sitapura">Sitapura</option>
+                  <option className='text-black' value="">Select a branch</option>
+                  {branches.map((branch, index) => (
+                    <option className='text-black' key={index} value={branch}>
+                      {branch}
+                    </option>
+                  ))}
                 </select>
               </div>
 

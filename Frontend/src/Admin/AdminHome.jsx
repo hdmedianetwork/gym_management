@@ -74,6 +74,12 @@ const Home = () => {
       },
       { title: 'Email', dataIndex: 'email', key: 'email' },
       { 
+        title: 'Branch', 
+        dataIndex: 'branch', 
+        key: 'branch',
+        render: (branch) => branch ? branch : 'N/A'
+      },
+      { 
         title: 'Account Status', 
         key: 'status',
         render: (_, record) => {
@@ -634,7 +640,7 @@ const Home = () => {
         // Refresh users and payments, then merge (same as initial load)
         await refreshUsers();
          
-        alert(`Sync completed! ${syncResult.updatedUsers.length} users updated. Check console for details.`);
+        alert(`Sync completed! ${syncResult.updatedUsers.length} users updated.`);
       }
     } catch (error) {
       // console.error('Error syncing users with payments:', error);
@@ -1080,18 +1086,17 @@ const Home = () => {
                     <DetailItem label="Height" value={selectedUser.height ? `${selectedUser.height} cm` : 'N/A'} />
                     <DetailItem label="Branch" value={selectedUser.branch || 'N/A'} />
                     <div className="md:col-span-2">
-                      <DetailItem label="Address" value={selectedUser.address || 'N/A'} />
-                    </div>
-                    {selectedUser.emergencyContact && (
-                      <div className="md:col-span-2 mt-2 pt-2 border-t border-gray-200">
-                        <h5 className="font-medium text-gray-700 mb-2">Emergency Contact</h5>
-                        <DetailItem label="Name" value={selectedUser.emergencyContact.name || 'N/A'} />
-                        <DetailItem label="Phone" value={selectedUser.emergencyContact.phone || 'N/A'} />
-                        <DetailItem label="Relation" value={selectedUser.emergencyContact.relation || 'N/A'} />
-                      </div>
-                    )}
                   </div>
+                  {selectedUser.emergencyContact && (
+                    <div className="md:col-span-2 mt-2 pt-2 border-t border-gray-200">
+                      <h5 className="font-medium text-gray-700 mb-2">Emergency Contact</h5>
+                      <DetailItem label="Name" value={selectedUser.emergencyContact.name || 'N/A'} />
+                      <DetailItem label="Phone" value={selectedUser.emergencyContact.phone || 'N/A'} />
+                      <DetailItem label="Relation" value={selectedUser.emergencyContact.relation || 'N/A'} />
+                    </div>
+                  )}
                 </div>
+              </div>
               )}
               
               <div className="pt-4 border-t border-gray-100">

@@ -22,6 +22,31 @@ const upload = multer({
 
 const router = express.Router();
 
+// Import Branches model
+import Branches from "../models/Branches.js";
+
+// Get all branches
+router.get('/branches', async (req, res) => {
+  try {
+    // Fetch branches from database
+    const branchesData = await Branches.findOne({});
+    
+    if (!branchesData) {
+      return res.status(404).json({ success: false, error: 'No branches found' });
+    }
+    
+    // Convert to array of branch names, filtering out empty values
+    const branches = [];
+    if (branchesData.branch1) branches.push(branchesData.branch1);
+    if (branchesData.branch2) branches.push(branchesData.branch2);
+    
+    res.status(200).json({ success: true, branches });
+  } catch (error) {
+    console.error('Error fetching branches:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch branches' });
+  }
+});
+
 // Get all users for admin dashboard
 router.get("/admin/all-users", async (req, res) => {
   try {
@@ -560,8 +585,19 @@ router.post("/complete-profile", upload.single('profilePhoto'), async (req, res)
       return res.status(400).json({ error: "All fields are required" });
     }
     
+    // Get valid branches from database
+    const branchesData = await Branches.findOne({});
+    if (!branchesData) {
+      return res.status(500).json({ error: "Error validating branch" });
+    }
+    
+    const validBranches = [
+      branchesData.branch1?.toLowerCase(),
+      branchesData.branch2?.toLowerCase()
+    ].filter(Boolean);
+    
     // Validate branch
-    if (!['mansarover', 'sitapura'].includes(branch.toLowerCase())) {
+    if (!validBranches.includes(branch.toLowerCase())) {
       return res.status(400).json({ error: "Invalid branch selection" });
     }
     
