@@ -17,6 +17,7 @@ import Profile from './pages/Profile';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import ProfileCompletionGuard from './components/ProfileCompletionGuard';
+import { AdminProvider } from './context/AdminContext';
 import './App.css';
 
 // Component to handle payment status page access
@@ -73,7 +74,9 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <AppContent />
+        <AdminProvider>
+          <AppContent />
+        </AdminProvider>
       </AuthProvider>
     </Router>
   );

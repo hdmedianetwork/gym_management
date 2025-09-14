@@ -5,6 +5,8 @@ import { UserOutlined, ClockCircleOutlined, StopOutlined, CloseOutlined, IdcardO
 import TerminatedUsers from './TerminatedUsers';
 import AddUserModal from './AddUserModal';
 import EditUserModal from './EditUserModal';
+import BranchOverlay from './BranchOverlay';
+import { useAdmin } from '../context/AdminContext';
 
 // Helper to categorize users
 const categorizeUsers = (users) => {
@@ -38,6 +40,8 @@ const categorizeUsers = (users) => {
 
 
 const Home = () => {
+  const adminContext = useAdmin();
+  const { showBranchOverlay, closeBranchOverlay, updateUsers, openBranchOverlay } = adminContext;
   const [activeTab, setActiveTab] = useState('active');
   const [usersData, setUsersData] = useState({ active: [], expiring: [], suspended: [], terminated: [] });
   const [tableData, setTableData] = useState([]);
@@ -495,6 +499,10 @@ const Home = () => {
         
         const categorized = categorizeUsers(mergedUsers);
         setUsersData(categorized);
+        
+        // Update users in AdminContext
+        updateUsers([...mergedUsers]);
+        
         setTableData(categorized.active);
         setFilteredData(categorized.active);
         // Hide Plan Type column
@@ -728,6 +736,9 @@ const Home = () => {
     const mergedUsers = mergeUsersWithPayments(users, payments);
     const categorized = categorizeUsers(mergedUsers);
     setUsersData(categorized);
+    
+    // Update users in AdminContext
+    updateUsers([...mergedUsers]);
 
     const currentData = categorized[activeTab] || [];
     setTableData(currentData);
@@ -857,6 +868,14 @@ const Home = () => {
         </Card>
 
         <div className="relative">
+          <div className="absolute -top-8 sm:-top-20 left-0">
+            <button
+              onClick={openBranchOverlay}
+              className="text-xs sm:text-sm text-purple-600 hover:text-purple-700 hover:underline font-medium whitespace-nowrap"
+            >
+              View Branches
+            </button>
+          </div>
           <div className="absolute -top-8 sm:-top-20 right-0">
             <button
               onClick={() => setShowTerminatedModal(true)}
@@ -934,6 +953,26 @@ const Home = () => {
                 )}
               </button>
               <button 
+                onClick={openBranchOverlay}
+                className="p-2 text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 shrink-0"
+                title="View Branches"
+              >
+                <svg 
+                  className="w-5 h-5" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24" 
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2} 
+                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" 
+                  />
+                </svg>
+              </button>
+              <button 
                 onClick={handleAddMember}
                 className="p-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shrink-0"
                 title="Add Member"
@@ -955,22 +994,28 @@ const Home = () => {
               </button>
             </div>
           </div>
-          <div className="rounded-lg border border-gray-200 overflow-x-auto">
-            <Table 
-              columns={tableColumns} 
-              dataSource={filteredData} 
-              rowKey="_id"
-              onRow={(record) => ({
-                onClick: () => handleUserClick(record),
-                className: 'cursor-pointer hover:bg-gray-50'
-              })}
-              pagination={false}
-              scroll={{ x: 'max-content' }}
-              className="min-w-full [&_.ant-table-thead>tr>th]:bg-gray-50 [&_.ant-table-thead>tr>th]:text-gray-600 [&_.ant-table-tbody>tr>td]:text-gray-700"
-              locale={{
-                emptyText: searchText ? 'No matching records found' : 'No data'
-              }}
-            />
+          <div className="rounded-lg border border-gray-200 overflow-hidden">
+            <div className="overflow-x-auto">
+              <Table 
+                columns={tableColumns} 
+                dataSource={filteredData} 
+                rowKey="_id"
+                onRow={(record) => ({
+                  onClick: () => handleUserClick(record),
+                  className: 'cursor-pointer hover:bg-gray-50'
+                })}
+                pagination={false}
+                scroll={{ 
+                  x: 'max-content',
+                  y: 'calc(70vh - 300px)',
+                  scrollToFirstRowOnChange: true
+                }}
+                className="min-w-full [&_.ant-table-thead>tr>th]:bg-gray-50 [&_.ant-table-thead>tr>th]:text-gray-600 [&_.ant-table-tbody>tr>td]:text-gray-700"
+                locale={{
+                  emptyText: searchText ? 'No matching records found' : 'No data'
+                }}
+              />
+            </div>
           </div>
         </div>
       )}
@@ -1192,6 +1237,13 @@ const Home = () => {
           }} 
         />
       </Modal>
+
+      {/* Branch Overview Modal */}
+      <BranchOverlay
+        visible={showBranchOverlay}
+        onClose={closeBranchOverlay}
+        users={[...usersData.active, ...usersData.expiring, ...usersData.suspended, ...usersData.terminated]}
+      />
     </div>
   );
 };
