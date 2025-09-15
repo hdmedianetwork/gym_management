@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url';
 import authRoutes from "./routes/auth.js";
 import cashfreeRoutes from "./cashfree/cashfreeRoutes.js";
 import planRoutes from "./routes/planRoutes.js";
+import couponRoutes from "./routes/couponRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import { startCronJob } from "./scripts/checkExpiringMemberships.js";
 
@@ -58,6 +59,7 @@ app.get("/",(req,res)=>{
 app.use("/api/auth", authRoutes);
 app.use("/api/payment", cashfreeRoutes);
 app.use("/api/plans", planRoutes);
+app.use("/api/coupons", couponRoutes);
 app.use("/api/notifications", notificationRoutes);
 
 // Branches route

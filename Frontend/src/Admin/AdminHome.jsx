@@ -7,6 +7,7 @@ import AddUserModal from './AddUserModal';
 import EditUserModal from './EditUserModal';
 import BranchOverlay from './BranchOverlay';
 import PlansOverlay from './PlansOverlay';
+import CouponOverlay from './CouponOverlay';
 import { useAdmin } from '../context/AdminContext';
 
 // Helper to categorize users
@@ -42,7 +43,7 @@ const categorizeUsers = (users) => {
 
 const Home = () => {
   const adminContext = useAdmin();
-  const { showBranchOverlay, closeBranchOverlay, showPlansOverlay, closePlansOverlay, updateUsers, openBranchOverlay, openPlansOverlay } = adminContext;
+  const { showBranchOverlay, closeBranchOverlay, showPlansOverlay, closePlansOverlay, showCouponsOverlay, closeCouponsOverlay, updateUsers, openBranchOverlay, openPlansOverlay } = adminContext;
   const [activeTab, setActiveTab] = useState('active');
   const [usersData, setUsersData] = useState({ active: [], expiring: [], suspended: [], terminated: [] });
   const [tableData, setTableData] = useState([]);
@@ -1223,6 +1224,12 @@ const Home = () => {
         visible={showPlansOverlay}
         onClose={closePlansOverlay}
         users={[...usersData.active, ...usersData.expiring, ...usersData.suspended, ...usersData.terminated]}
+      />
+
+      {/* Coupon Management Modal */}
+      <CouponOverlay
+        visible={showCouponsOverlay}
+        onClose={closeCouponsOverlay}
       />
     </div>
   );

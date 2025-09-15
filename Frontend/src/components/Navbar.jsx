@@ -133,7 +133,14 @@ const Navbar = () => {
         setIsOpen(false); // Close mobile menu
       }
     },
-    { name: 'Coupon Codes', icon: <FiCalendar className="w-5 h-5" /> },
+    { 
+      name: 'Coupon Codes', 
+      icon: <FiCalendar className="w-5 h-5" />,
+      action: () => {
+        adminContext.openCouponsOverlay();
+        setIsOpen(false); // Close mobile menu
+      }
+    },
   ];
 
   // Common auth links

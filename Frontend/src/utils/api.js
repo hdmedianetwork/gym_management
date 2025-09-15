@@ -567,6 +567,144 @@ export const deletePlan = async (planId) => {
   }
 };
 
+// Coupon management API functions (Admin only)
+export const getAllCoupons = async () => {
+  try {
+    const response = await fetch(`${API_BASE}/api/coupons`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    });
+    
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to fetch coupons');
+    }
+    
+    return data.data; // Return the coupons array
+  } catch (error) {
+    console.error('Get all coupons error:', error);
+    throw error;
+  }
+};
+
+export const getCouponById = async (id) => {
+  try {
+    const response = await fetch(`${API_BASE}/api/coupons/${id}`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    });
+    
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to fetch coupon');
+    }
+    
+    return data.data; // Return the coupon object
+  } catch (error) {
+    console.error('Get coupon by ID error:', error);
+    throw error;
+  }
+};
+
+export const getCouponByCode = async (code) => {
+  try {
+    const response = await fetch(`${API_BASE}/api/coupons/code/${code}`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    });
+    
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to fetch coupon');
+    }
+    
+    return data.data; // Return the coupon object
+  } catch (error) {
+    console.error('Get coupon by code error:', error);
+    throw error;
+  }
+};
+
+export const createCoupon = async (couponData) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE}/api/coupons`, {
+      method: 'POST',
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : undefined,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(couponData),
+      credentials: 'include',
+    });
+    
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to create coupon');
+    }
+    
+    return data.data;
+  } catch (error) {
+    console.error('Create coupon error:', error);
+    throw error;
+  }
+};
+
+export const updateCoupon = async (couponId, couponData) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE}/api/coupons/${couponId}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : undefined,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(couponData),
+      credentials: 'include',
+    });
+    
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to update coupon');
+    }
+    
+    return data.data;
+  } catch (error) {
+    console.error('Update coupon error:', error);
+    throw error;
+  }
+};
+
+export const deleteCoupon = async (couponId) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE}/api/coupons/${couponId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : undefined,
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    });
+    
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to delete coupon');
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Delete coupon error:', error);
+    throw error;
+  }
+};
+
 // Helper to check if response is successful (2xx)
 const checkStatus = (response) => {
   if (response.ok) {

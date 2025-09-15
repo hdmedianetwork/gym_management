@@ -5,6 +5,7 @@ const AdminContext = createContext();
 export const AdminProvider = ({ children }) => {
   const [showBranchOverlay, setShowBranchOverlay] = useState(false);
   const [showPlansOverlay, setShowPlansOverlay] = useState(false);
+  const [showCouponsOverlay, setShowCouponsOverlay] = useState(false);
   const [adminData, setAdminData] = useState({
     users: []
   });
@@ -14,6 +15,9 @@ export const AdminProvider = ({ children }) => {
   
   const openPlansOverlay = () => setShowPlansOverlay(true);
   const closePlansOverlay = () => setShowPlansOverlay(false);
+
+  const openCouponsOverlay = () => setShowCouponsOverlay(true);
+  const closeCouponsOverlay = () => setShowCouponsOverlay(false);
 
   const updateUsers = (users) => {
     setAdminData(prev => ({ ...prev, users }));
@@ -27,6 +31,9 @@ export const AdminProvider = ({ children }) => {
       showPlansOverlay,
       openPlansOverlay,
       closePlansOverlay,
+      showCouponsOverlay,
+      openCouponsOverlay,
+      closeCouponsOverlay,
       adminData,
       updateUsers
     }}>
