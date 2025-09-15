@@ -492,6 +492,81 @@ export const checkProfileStatus = async (userId) => {
   }
 };
 
+// Plan management API functions (Admin only)
+export const createPlan = async (planData) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE}/api/plans`, {
+      method: 'POST',
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : undefined,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(planData),
+      credentials: 'include',
+    });
+    
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to create plan');
+    }
+    
+    return data.data;
+  } catch (error) {
+    console.error('Create plan error:', error);
+    throw error;
+  }
+};
+
+export const updatePlan = async (planId, planData) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE}/api/plans/${planId}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : undefined,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(planData),
+      credentials: 'include',
+    });
+    
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to update plan');
+    }
+    
+    return data.data;
+  } catch (error) {
+    console.error('Update plan error:', error);
+    throw error;
+  }
+};
+
+export const deletePlan = async (planId) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE}/api/plans/${planId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : undefined,
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    });
+    
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to delete plan');
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Delete plan error:', error);
+    throw error;
+  }
+};
+
 // Helper to check if response is successful (2xx)
 const checkStatus = (response) => {
   if (response.ok) {

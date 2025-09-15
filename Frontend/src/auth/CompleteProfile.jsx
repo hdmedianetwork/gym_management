@@ -127,7 +127,8 @@ const CompleteProfile = () => {
       profileData.append('profilePhoto', formData.profilePhoto);
       profileData.append('dateOfBirth', formData.dateOfBirth);
       profileData.append('address', formData.address);
-      profileData.append('branch', formData.branch);
+      // Ensure branch is sent in lowercase to match backend validation
+      profileData.append('branch', formData.branch.toLowerCase());
       profileData.append('weight', formData.weight);
       profileData.append('height', formData.height);
 

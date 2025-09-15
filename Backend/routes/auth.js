@@ -644,10 +644,15 @@ router.post("/complete-profile", upload.single('profilePhoto'), async (req, res)
       return res.status(500).json({ error: "Error validating branch" });
     }
     
-    const validBranches = [
-      branchesData.branch1?.toLowerCase(),
-      branchesData.branch2?.toLowerCase()
-    ].filter(Boolean);
+    // Convert branches document to array of branch names (handles dynamic branch fields)
+    const validBranches = Object.entries(branchesData.toObject())
+      .filter(([key]) => key.startsWith('branch') && branchesData[key])
+      .map(([_, value]) => String(value).toLowerCase().trim())
+      .filter(Boolean);
+      
+    if (validBranches.length === 0) {
+      return res.status(500).json({ error: "No valid branches found in the system" });
+    }
     
     // Validate branch
     if (!validBranches.includes(branch.toLowerCase())) {

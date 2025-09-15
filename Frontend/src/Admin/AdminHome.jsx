@@ -6,6 +6,7 @@ import TerminatedUsers from './TerminatedUsers';
 import AddUserModal from './AddUserModal';
 import EditUserModal from './EditUserModal';
 import BranchOverlay from './BranchOverlay';
+import PlansOverlay from './PlansOverlay';
 import { useAdmin } from '../context/AdminContext';
 
 // Helper to categorize users
@@ -41,7 +42,7 @@ const categorizeUsers = (users) => {
 
 const Home = () => {
   const adminContext = useAdmin();
-  const { showBranchOverlay, closeBranchOverlay, updateUsers, openBranchOverlay } = adminContext;
+  const { showBranchOverlay, closeBranchOverlay, showPlansOverlay, closePlansOverlay, updateUsers, openBranchOverlay, openPlansOverlay } = adminContext;
   const [activeTab, setActiveTab] = useState('active');
   const [usersData, setUsersData] = useState({ active: [], expiring: [], suspended: [], terminated: [] });
   const [tableData, setTableData] = useState([]);
@@ -876,6 +877,14 @@ const Home = () => {
               View Branches
             </button>
           </div>
+          <div className="absolute -top-8 sm:-top-10 left-24">
+            <button
+              onClick={openPlansOverlay}
+              className="text-xs sm:text-sm text-green-600 hover:text-green-700 hover:underline font-medium whitespace-nowrap"
+            >
+              Manage Plans
+            </button>
+          </div>
           <div className="absolute -top-8 sm:-top-20 right-0">
             <button
               onClick={() => setShowTerminatedModal(true)}
@@ -1222,6 +1231,13 @@ const Home = () => {
       <BranchOverlay
         visible={showBranchOverlay}
         onClose={closeBranchOverlay}
+        users={[...usersData.active, ...usersData.expiring, ...usersData.suspended, ...usersData.terminated]}
+      />
+
+      {/* Plans Management Modal */}
+      <PlansOverlay
+        visible={showPlansOverlay}
+        onClose={closePlansOverlay}
         users={[...usersData.active, ...usersData.expiring, ...usersData.suspended, ...usersData.terminated]}
       />
     </div>

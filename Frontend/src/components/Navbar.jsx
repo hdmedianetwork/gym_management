@@ -125,7 +125,15 @@ const Navbar = () => {
         setIsOpen(false); // Close mobile menu
       }
     },
-    { name: 'Coupon Codes', icon: <FiDollarSign className="w-5 h-5" /> },
+    { 
+      name: 'Plans', 
+      icon: <FiDollarSign className="w-5 h-5" />,
+      action: () => {
+        adminContext.openPlansOverlay();
+        setIsOpen(false); // Close mobile menu
+      }
+    },
+    { name: 'Coupon Codes', icon: <FiCalendar className="w-5 h-5" /> },
   ];
 
   // Common auth links
