@@ -24,6 +24,26 @@ const router = express.Router();
 
 // Import Branches model
 import Branches from "../models/Branches.js";
+import mongoose from 'mongoose';
+
+// Debug route to check database state
+router.get('/debug/branches', async (req, res) => {
+  try {
+    // Get raw collection
+    const collection = mongoose.connection.db.collection('branches');
+    const count = await collection.countDocuments();
+    const docs = await collection.find({}).toArray();
+    
+    res.json({
+      collection: 'branches',
+      count,
+      documents: docs
+    });
+  } catch (error) {
+    console.error('Debug error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // Get all branches
 router.get('/branches', async (req, res) => {
@@ -32,18 +52,51 @@ router.get('/branches', async (req, res) => {
     const branchesData = await Branches.findOne({});
     
     if (!branchesData) {
-      return res.status(404).json({ success: false, error: 'No branches found' });
+      return res.status(200).json({ success: true, branches: [] });
     }
     
-    // Convert to array of branch names, filtering out empty values
-    const branches = [];
-    if (branchesData.branch1) branches.push(branchesData.branch1);
-    if (branchesData.branch2) branches.push(branchesData.branch2);
+    // Use the model method to get branches as an array
+    const branches = branchesData.getBranchesArray().map(b => b.name);
     
     res.status(200).json({ success: true, branches });
   } catch (error) {
     console.error('Error fetching branches:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch branches' });
+  }
+});
+
+// Add new branch
+router.post('/branches', async (req, res) => {
+  try {
+    console.log('Received request to add branch:', req.body);
+    const { name } = req.body;
+    
+    if (!name || typeof name !== 'string' || !name.trim()) {
+      console.log('Invalid branch name provided');
+      return res.status(400).json({ success: false, error: 'Branch name is required' });
+    }
+    
+    // Use the static method to add a new branch
+    console.log('Calling Branches.addBranch()');
+    const updatedBranches = await Branches.addBranch(name.trim());
+    console.log('Branch added, updated branches:', updatedBranches);
+    
+    // Get the updated branches list
+    const branches = updatedBranches.getBranchesArray().map(b => b.name);
+    console.log('Formatted branches list:', branches);
+    
+    res.status(201).json({ 
+      success: true, 
+      message: 'Branch added successfully',
+      branches
+    });
+    
+  } catch (error) {
+    console.error('Error adding branch:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message || 'Failed to add branch' 
+    });
   }
 });
 

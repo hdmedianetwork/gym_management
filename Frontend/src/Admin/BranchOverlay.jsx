@@ -1,58 +1,137 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Card, Table } from 'antd';
-import { ShopOutlined, UserOutlined, CloseOutlined } from '@ant-design/icons';
+import { Modal, Card, Table, message, Input, Button } from 'antd';
+import { ShopOutlined, UserOutlined, CloseOutlined, PlusOutlined } from '@ant-design/icons';
+import { fetchBranches, getAllUsers, addBranch } from '../utils/api';
 
-const BranchOverlay = ({ visible, onClose, users = [] }) => {
+const BranchOverlay = ({ visible, onClose }) => {
+  const [branches, setBranches] = useState([]);
   const [branchStats, setBranchStats] = useState([]);
   const [selectedBranch, setSelectedBranch] = useState(null);
   const [branchUsers, setBranchUsers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [users, setUsers] = useState([]);
+  const [isAddBranchModalVisible, setIsAddBranchModalVisible] = useState(false);
+  const [newBranchName, setNewBranchName] = useState('');
+  const [isAddingBranch, setIsAddingBranch] = useState(false);
 
   useEffect(() => {
-    if (visible && users.length > 0) {
-      calculateBranchStats();
+    if (visible) {
+      loadData();
     }
-  }, [visible, users]);
+  }, [visible]);
 
-  const calculateBranchStats = () => {
-    // Group users by branch
-    const branchMap = {};
-    
-    users.forEach(user => {
-      const branch = user.branch || 'No Branch';
-      if (!branchMap[branch]) {
-        branchMap[branch] = {
-          name: branch,
-          users: [],
-          activeUsers: 0,
-          totalRevenue: 0
-        };
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [branchesData, usersData] = await Promise.all([
+        fetchBranches(),
+        getAllUsers()
+      ]);
+  
+      let branchNames = [];
+  
+      if (branchesData && Array.isArray(branchesData.branches)) {
+        branchNames = branchesData.branches.map((name, index) => ({
+          _id: `branch_${index + 1}`,  // unique id
+          name: String(name).trim()    // branch name
+        }));
       }
-      
-      branchMap[branch].users.push(user);
-      
-      // Count active users (not suspended or terminated)
+  
+      setBranches(branchNames);
+      setUsers(usersData);
+  
+      calculateBranchStats(branchNames, usersData);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      message.error('Failed to load branch data');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+
+  const calculateBranchStats = (branches, allUsers) => {
+    const branchMap = {};
+  
+    const usersArray = Array.isArray(allUsers) ? allUsers : [];
+  
+    if (Array.isArray(branches)) {
+      branches.forEach(branch => {
+        if (branch && branch._id) {
+          branchMap[branch.name] = {   // ✅ use branch.name as key
+            _id: branch._id,
+            name: branch.name || 'Unnamed Branch',
+            users: [],
+            activeUsers: 0,
+            totalRevenue: 0
+          };
+        }
+      });
+    }
+  
+    // Assign users to correct branch by name
+    usersArray.forEach(user => {
+      if (!user || !user.branch) return;
+  
+      const branch = branchMap[user.branch]; // ✅ matches "Vivek vihar"
+      if (!branch) return;
+  
+      branch.users.push(user);
+  
       const status = (user.accountStatus || '').toLowerCase();
       if (status !== 'suspended' && status !== 'terminated') {
-        branchMap[branch].activeUsers++;
+        branch.activeUsers++;
       }
-      
-      // Calculate revenue
-      const amount = user.orderAmount || user.planAmount || 0;
-      branchMap[branch].totalRevenue += amount;
+  
+      const amount = Number(user.orderAmount || user.planAmount || 0);
+      branch.totalRevenue += isNaN(amount) ? 0 : amount;
     });
-
-    const stats = Object.values(branchMap).map((branch, index) => ({
-      key: index,
+  
+    const stats = Object.values(branchMap).map(branch => ({
       ...branch,
-      totalUsers: branch.users.length
+      key: branch._id,
+      totalUsers: branch.users.length,
+      totalRevenue: branch.totalRevenue || 0
     }));
-
+  
     setBranchStats(stats);
   };
+  
 
   const handleBranchClick = (branch) => {
     setSelectedBranch(branch);
     setBranchUsers(branch.users);
+  };
+
+  const handleAddBranch = async () => {
+    if (!newBranchName.trim()) {
+      message.warning('Please enter a branch name');
+      return;
+    }
+
+    try {
+      setIsAddingBranch(true);
+      await addBranch({ name: newBranchName.trim() });
+      message.success('Branch added successfully');
+      setNewBranchName('');
+      setIsAddBranchModalVisible(false);
+      loadData(); // Refresh the branch list
+    } catch (error) {
+      console.error('Error adding branch:', error);
+      message.error('Failed to add branch');
+    } finally {
+      setIsAddingBranch(false);
+    }
+  };
+
+  const showAddBranchModal = () => {
+    setNewBranchName('');
+    setIsAddBranchModalVisible(true);
+  };
+
+  const handleCancelAddBranch = () => {
+    setIsAddBranchModalVisible(false);
+    setNewBranchName('');
   };
 
   const userColumns = [
@@ -124,65 +203,54 @@ const BranchOverlay = ({ visible, onClose, users = [] }) => {
       width={selectedBranch ? 900 : 800}
       className="[&_.ant-modal-content]:p-0 [&_.ant-modal-header]:p-4 [&_.ant-modal-header]:border-b [&_.ant-modal-header]:border-gray-200 [&_.ant-modal-body]:p-6"
     >
-      {!selectedBranch ? (
+      {loading ? (
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      ) : !selectedBranch ? (
         // Branch overview
         <div className="space-y-6">
-          <div className="text-center mb-6">
+          <div className="flex justify-between items-center mb-6">
             <h3 className="text-lg font-semibold text-gray-900">Branch Statistics</h3>
-            <p className="text-gray-600">Click on any branch to view detailed user information</p>
-            {branchStats.length > 0 && (
-              <div className="mt-2 text-sm text-gray-500">
-                Total: {branchStats.reduce((acc, branch) => acc + branch.totalUsers, 0)} users across {branchStats.length} branches
-              </div>
-            )}
+            <button
+              onClick={showAddBranchModal}
+              className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
+            >
+              <PlusOutlined />
+              <span>Add Branch</span>
+            </button>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {branchStats.map((branch, index) => (
-              <Card
-                key={index}
-                className="cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border border-gray-200 rounded-lg"
-                onClick={() => handleBranchClick(branch)}
-                styles={{ body: { padding: '20px' } }}
-              >
-                <div className="text-center space-y-3">
-                  <div className="text-3xl p-3 bg-blue-50 text-blue-500 rounded-full mx-auto w-fit">
-                    <ShopOutlined />
-                  </div>
-                  
-                  <div>
-                    <h4 className="text-lg font-semibold text-gray-900 mb-2">
-                      {branch.name}
-                    </h4>
+            {branchStats.length > 0 ? (
+              branchStats.map((branch) => (
+                <Card
+                  key={branch._id}
+                  className="cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border border-gray-200 rounded-lg"
+                  onClick={() => handleBranchClick(branch)}
+                  styles={{ body: { padding: '20px' } }}
+                >
+                  <div className="text-center space-y-3">
+                    <div className="text-3xl p-3 bg-blue-50 text-blue-500 rounded-full mx-auto w-fit">
+                      <ShopOutlined />
+                    </div>
                     
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Total Users:</span>
-                        <span className="font-semibold text-gray-900">{branch.totalUsers}</span>
-                      </div>
-                      
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Active Users:</span>
-                        <span className="font-semibold text-green-600">{branch.activeUsers}</span>
-                      </div>
-                      
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Total Revenue:</span>
-                        <span className="font-semibold text-blue-600">₹{branch.totalRevenue.toLocaleString()}</span>
-                      </div>
+                    <div>
+                      <h4 className="text-lg font-semibold text-gray-900 mb-1">
+                        {branch.name}
+                      </h4>
                     </div>
                   </div>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              ))
+            ) : (
+              <div className="col-span-3 text-center py-12">
+                <ShopOutlined className="text-6xl text-gray-300 mb-4" />
+                <p className="text-gray-500 text-lg">No branch data available</p>
+                <p className="text-sm text-gray-400 mt-2">Add branches to get started</p>
+              </div>
+            )}
           </div>
-          
-          {branchStats.length === 0 && (
-            <div className="text-center py-12">
-              <ShopOutlined className="text-6xl text-gray-300 mb-4" />
-              <p className="text-gray-500 text-lg">No branch data available</p>
-            </div>
-          )}
         </div>
       ) : (
         // Branch users detail
@@ -233,6 +301,36 @@ const BranchOverlay = ({ visible, onClose, users = [] }) => {
           </div>
         </div>
       )}
+      
+      {/* Add Branch Modal */}
+      <Modal
+        title="Add New Branch"
+        open={isAddBranchModalVisible}
+        onCancel={handleCancelAddBranch}
+        footer={[
+          <Button key="cancel" onClick={handleCancelAddBranch}>
+            Cancel
+          </Button>,
+          <Button
+            key="submit"
+            type="primary"
+            onClick={handleAddBranch}
+            loading={isAddingBranch}
+          >
+            Add Branch
+          </Button>,
+        ]}
+      >
+        <div className="py-4">
+          <Input
+            placeholder="Enter branch name"
+            value={newBranchName}
+            onChange={(e) => setNewBranchName(e.target.value)}
+            onPressEnter={handleAddBranch}
+            autoFocus
+          />
+        </div>
+      </Modal>
     </Modal>
   );
 };

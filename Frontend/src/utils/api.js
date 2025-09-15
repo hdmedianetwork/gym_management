@@ -399,6 +399,31 @@ export const resetPassword = async (email, otp, newPassword) => {
 };
 
 // Branch API functions
+export const addBranch = async (branchData) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE}/api/auth/branches`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token ? `Bearer ${token}` : '',
+      },
+      body: JSON.stringify(branchData),
+      credentials: 'include',
+    });
+    
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to add branch');
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Add branch error:', error);
+    throw error;
+  }
+};
+
 export const fetchBranches = async () => {
   try {
     const response = await fetch(`${API_BASE}/api/auth/branches`, {
