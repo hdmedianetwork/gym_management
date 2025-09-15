@@ -869,22 +869,6 @@ const Home = () => {
         </Card>
 
         <div className="relative">
-          <div className="absolute -top-8 sm:-top-20 left-0">
-            <button
-              onClick={openBranchOverlay}
-              className="text-xs sm:text-sm text-purple-600 hover:text-purple-700 hover:underline font-medium whitespace-nowrap"
-            >
-              View Branches
-            </button>
-          </div>
-          <div className="absolute -top-8 sm:-top-10 left-24">
-            <button
-              onClick={openPlansOverlay}
-              className="text-xs sm:text-sm text-green-600 hover:text-green-700 hover:underline font-medium whitespace-nowrap"
-            >
-              Manage Plans
-            </button>
-          </div>
           <div className="absolute -top-8 sm:-top-20 right-0">
             <button
               onClick={() => setShowTerminatedModal(true)}

@@ -3,6 +3,35 @@ import { Modal, Card, Table, Button, Form, Input, InputNumber, message } from 'a
 import { CreditCardOutlined, PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { getAllPlans, createPlan, updatePlan, deletePlan } from '../utils/api';
 
+const userColumns = [
+  {
+    title: 'Name',
+    dataIndex: 'name',
+    key: 'name',
+  },
+  {
+    title: 'Email',
+    dataIndex: 'email',
+    key: 'email',
+  },
+  {
+    title: 'Status',
+    dataIndex: 'accountStatus',
+    key: 'accountStatus',
+    render: (status) => (
+      <span className={`capitalize ${status === 'active' ? 'text-green-600' : 'text-red-600'}`}>
+        {status || 'N/A'}
+      </span>
+    ),
+  },
+  {
+    title: 'Plan Amount',
+    dataIndex: 'orderAmount',
+    key: 'orderAmount',
+    render: (amount) => `₹${amount?.toLocaleString() || '0'}`,
+  },
+];
+
 const PlansOverlay = ({ visible, onClose, users = [] }) => {
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -35,14 +64,10 @@ const PlansOverlay = ({ visible, onClose, users = [] }) => {
   };
 
   const calculatePlanStats = (plan) => {
-    // Find users who have this plan
-    const planUsers = users.filter(user => {
+    const planUsers = (users || []).filter(user => {
       const userPlanType = (user.planType || '').toLowerCase();
       const planTypeMatch = userPlanType === plan.planType.toLowerCase();
-      
-      // Also check by amount if plan type doesn't match exactly
       const amountMatch = user.orderAmount === plan.amount || user.planAmount === plan.amount;
-      
       return planTypeMatch || amountMatch;
     });
 
@@ -63,14 +88,13 @@ const PlansOverlay = ({ visible, onClose, users = [] }) => {
     };
   };
 
-  const handlePlanClick = (plan) => {
-    const stats = calculatePlanStats(plan);
-    setSelectedPlan({...plan, ...stats});
-    setPlanUsers(stats.users);
-  };
+  // Removed handlePlanClick as we don't need it anymore
 
   const handleAddPlan = async (values) => {
     try {
+      if (values.features) {
+        values.features = values.features.split('\n').filter(f => f.trim());
+      }
       const created = await createPlan(values);
       message.success('Plan created successfully');
       modal.success({
@@ -94,6 +118,9 @@ const PlansOverlay = ({ visible, onClose, users = [] }) => {
 
   const handleEditPlan = async (values) => {
     try {
+      if (values.features) {
+        values.features = values.features.split('\n').filter(f => f.trim());
+      }
       await updatePlan(editingPlan._id, values);
       message.success('Plan updated successfully');
       setShowEditPlanModal(false);
@@ -106,77 +133,42 @@ const PlansOverlay = ({ visible, onClose, users = [] }) => {
     }
   };
 
-  const handleDeletePlan = async (planId) => {
-    try {
-      if (window.confirm('Are you sure you want to delete this plan?')) {
-        await deletePlan(planId);
-        message.success('Plan deleted successfully');
-        fetchPlans();
-      }
-    } catch (error) {
-      console.error('Error deleting plan:', error);
-      message.error('Failed to delete plan');
-    }
+  const handleDeletePlan = (planId) => {
+    modal.confirm({
+      title: 'Delete Plan',
+      content: 'Are you sure you want to delete this plan?',
+      okText: 'Delete',
+      okType: 'danger',
+      cancelText: 'Cancel',
+      onOk: async () => {
+        try {
+          await deletePlan(planId);
+          message.success('Plan deleted successfully');
+          fetchPlans();
+        } catch (error) {
+          console.error('Error deleting plan:', error);
+          message.error('Failed to delete plan');
+        }
+      },
+    });
   };
 
   const openEditModal = (plan) => {
     setEditingPlan(plan);
-    editForm.setFieldsValue({
+    const formValues = {
       planType: plan.planType,
       amount: plan.amount,
-      duration: plan.duration
-    });
+      duration: plan.duration,
+      features: plan.features && Array.isArray(plan.features) ? plan.features.join('\n') : '',
+    };
+    editForm.setFieldsValue(formValues);
     setShowEditPlanModal(true);
   };
 
-  const userColumns = [
-    { 
-      title: 'Name', 
-      dataIndex: 'name', 
-      key: 'name',
-      width: 150
-    },
-    { 
-      title: 'Email', 
-      dataIndex: 'email', 
-      key: 'email',
-      width: 200
-    },
-    { 
-      title: 'Phone', 
-      dataIndex: 'mobile', 
-      key: 'mobile',
-      width: 120,
-      render: (mobile, record) => record.mobile || record.phone || 'N/A'
-    },
-    { 
-      title: 'Status', 
-      key: 'status',
-      width: 100,
-      render: (_, record) => {
-        const status = (record.accountStatus || '').toLowerCase();
-        let colorClass = 'bg-gray-100 text-gray-800';
-        if (status === 'active') colorClass = 'bg-green-100 text-green-800';
-        else if (status === 'suspended') colorClass = 'bg-red-100 text-red-800';
-        else if (status === 'terminated') colorClass = 'bg-gray-100 text-gray-600';
-        
-        return (
-          <span className={`px-2 py-1 rounded-full text-xs font-medium ${colorClass}`}>
-            {status.charAt(0).toUpperCase() + status.slice(1) || 'Unknown'}
-          </span>
-        );
-      }
-    },
-    { 
-      title: 'Amount Paid', 
-      key: 'amount',
-      width: 120,
-      render: (_, record) => {
-        const amount = record.orderAmount || record.planAmount || 0;
-        return <span className="font-medium">₹{amount.toLocaleString()}</span>;
-      }
-    }
-  ];
+  const handleDeleteClick = (e, plan) => {
+    e.stopPropagation();
+    handleDeletePlan(plan._id);
+  };
 
   return (
     <>
@@ -186,22 +178,17 @@ const PlansOverlay = ({ visible, onClose, users = [] }) => {
           <div className="flex items-center gap-3">
             <CreditCardOutlined className="text-green-600" />
             <span className="text-xl font-semibold text-gray-900">
-              {selectedPlan ? `${selectedPlan.planType} Plan - Users` : 'Plans Overview'}
+              Plans Management
             </span>
           </div>
         }
         open={visible}
-        onCancel={() => {
-          setSelectedPlan(null);
-          setPlanUsers([]);
-          onClose();
-        }}
+        onCancel={onClose}
         footer={null}
-        width={selectedPlan ? 900 : 800}
+        width={900}
         className="[&_.ant-modal-content]:p-0 [&_.ant-modal-header]:p-4 [&_.ant-modal-header]:border-b [&_.ant-modal-header]:border-gray-200 [&_.ant-modal-body]:p-6"
       >
-        {!selectedPlan ? (
-          // Plans overview
+        {!showAddPlanModal && !showEditPlanModal && !selectedPlan && (
           <div className="space-y-6">
             <div className="flex justify-between items-center mb-6">
               <div className="text-center flex-1">
@@ -228,11 +215,8 @@ const PlansOverlay = ({ visible, onClose, users = [] }) => {
                 return (
                   <Card
                     key={plan._id || index}
-                    className="cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border border-gray-200 rounded-lg relative"
-                    onClick={() => handlePlanClick(plan)}
-                    styles={{ body: { padding: '20px' } }}
+                    className="transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border border-gray-200 rounded-lg relative group"
                   >
-                    {/* Action buttons */}
                     <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button
                         type="text"
@@ -248,15 +232,12 @@ const PlansOverlay = ({ visible, onClose, users = [] }) => {
                         type="text"
                         size="small"
                         icon={<DeleteOutlined />}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeletePlan(plan._id);
-                        }}
+                        onClick={(e) => handleDeleteClick(e, plan)}
                         className="hover:bg-red-50 hover:text-red-600"
                       />
                     </div>
 
-                    <div className="text-center space-y-3 group">
+                    <div className="text-center space-y-3">
                       <div className="text-3xl p-3 bg-green-50 text-green-500 rounded-full mx-auto w-fit">
                         <CreditCardOutlined />
                       </div>
@@ -267,16 +248,27 @@ const PlansOverlay = ({ visible, onClose, users = [] }) => {
                         </h4>
                         
                         <div className="space-y-2 text-sm">
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-600">Price:</span>
-                            <span className="font-semibold text-gray-900">₹{plan.amount}</span>
-                          </div>
-                          
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-600">Duration:</span>
-                            <span className="font-semibold text-gray-900">
-                              {plan.duration} month{plan.duration > 1 ? 's' : ''}
-                            </span>
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h3 className="font-medium text-gray-900 group-hover:text-green-600">{plan.planType}</h3>
+                              <p className="text-sm text-gray-500">{plan.duration} month{plan.duration > 1 ? 's' : ''}</p>
+                              {plan.features?.length > 0 && (
+                                <div className="mt-2 text-xs text-gray-500">
+                                  {plan.features.slice(0, 2).map((f, i) => (
+                                    <div key={i} className="truncate">• {f}</div>
+                                  ))}
+                                  {plan.features.length > 2 && (
+                                    <div className="text-blue-500">+{plan.features.length - 2} more</div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                            <div className="text-right">
+                              <span className="text-lg font-bold text-green-600">₹{plan.amount.toLocaleString()}</span>
+                              <div className="text-xs text-gray-400 mt-1">
+                                {stats.totalUsers} users
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -301,8 +293,9 @@ const PlansOverlay = ({ visible, onClose, users = [] }) => {
               </div>
             )}
           </div>
-        ) : (
-          // Plan users detail
+        )}
+        
+        {selectedPlan && !showEditPlanModal && (
           <div className="space-y-4">
             <div className="flex items-center justify-between pb-4 border-b border-gray-100">
               <div className="flex items-center gap-3">
@@ -324,14 +317,14 @@ const PlansOverlay = ({ visible, onClose, users = [] }) => {
                     {selectedPlan.planType} Plan
                   </h3>
                   <p className="text-gray-600">
-                    ₹{selectedPlan.amount} • {selectedPlan.duration} month{selectedPlan.duration > 1 ? 's' : ''} • {selectedPlan.totalUsers} users
+                    ₹{selectedPlan.amount} • {selectedPlan.duration} month{selectedPlan.duration !== 1 ? 's' : ''} • {selectedPlan.totalUsers} users
                   </p>
                 </div>
               </div>
               
               <div className="text-right">
                 <p className="text-sm text-gray-600">Total Revenue</p>
-                <p className="text-xl font-bold text-blue-600">₹{selectedPlan.totalRevenue.toLocaleString()}</p>
+                <p className="text-xl font-bold text-blue-600">₹{selectedPlan.totalRevenue?.toLocaleString() || '0'}</p>
               </div>
             </div>
             
@@ -356,7 +349,6 @@ const PlansOverlay = ({ visible, onClose, users = [] }) => {
         )}
       </Modal>
 
-      {/* Add Plan Modal */}
       <Modal
         title="Add New Plan"
         open={showAddPlanModal}
@@ -409,6 +401,17 @@ const PlansOverlay = ({ visible, onClose, users = [] }) => {
             />
           </Form.Item>
           
+          <Form.Item
+            label="Features (one per line)"
+            name="features"
+            rules={[{ required: false }]}
+          >
+            <Input.TextArea
+              placeholder="Enter features, one per line"
+              rows={4}
+            />
+          </Form.Item>
+          
           <div className="flex justify-end gap-3 pt-4">
             <Button onClick={() => {
               setShowAddPlanModal(false);
@@ -423,7 +426,6 @@ const PlansOverlay = ({ visible, onClose, users = [] }) => {
         </Form>
       </Modal>
 
-      {/* Edit Plan Modal */}
       <Modal
         title="Edit Plan"
         open={showEditPlanModal}
@@ -474,6 +476,17 @@ const PlansOverlay = ({ visible, onClose, users = [] }) => {
               min={1}
               max={12}
               className="w-full"
+            />
+          </Form.Item>
+          
+          <Form.Item
+            label="Features (one per line)"
+            name="features"
+            rules={[{ required: false }]}
+          >
+            <Input.TextArea
+              placeholder="Enter features, one per line"
+              rows={4}
             />
           </Form.Item>
           
