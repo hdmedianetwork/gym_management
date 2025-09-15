@@ -186,9 +186,10 @@ const PlansOverlay = ({ visible, onClose, users = [] }) => {
         onCancel={onClose}
         footer={null}
         width={900}
-        className="[&_.ant-modal-content]:p-0 [&_.ant-modal-header]:p-4 [&_.ant-modal-header]:border-b [&_.ant-modal-header]:border-gray-200 [&_.ant-modal-body]:p-6"
+        className="[&_.ant-modal-content]:p-0 [&_.ant-modal-header]:p-4 [&_.ant-modal-header]:border-b [&_.ant-modal-header]:border-gray-200 [&_.ant-modal-body]:p-0"
       >
-        {!showAddPlanModal && !showEditPlanModal && !selectedPlan && (
+        <div className="max-h-[70vh] overflow-y-auto p-6">
+          {!showAddPlanModal && !showEditPlanModal && !selectedPlan && (
           <div className="space-y-6">
             <div className="flex justify-between items-center mb-6">
               <div className="text-center flex-1">
@@ -217,23 +218,22 @@ const PlansOverlay = ({ visible, onClose, users = [] }) => {
                     key={plan._id || index}
                     className="transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border border-gray-200 rounded-lg relative group"
                   >
-                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute top-2 right-2 flex gap-1 opacity-100">
                       <Button
                         type="text"
-                        size="small"
                         icon={<EditOutlined />}
                         onClick={(e) => {
                           e.stopPropagation();
                           openEditModal(plan);
                         }}
-                        className="hover:bg-blue-50 hover:text-blue-600"
+                        className="text-blue-500 hover:bg-blue-50 hover:text-blue-600"
                       />
                       <Button
                         type="text"
-                        size="small"
+                        danger
                         icon={<DeleteOutlined />}
                         onClick={(e) => handleDeleteClick(e, plan)}
-                        className="hover:bg-red-50 hover:text-red-600"
+                        className="text-red-500 hover:bg-red-50"
                       />
                     </div>
 
@@ -346,7 +346,8 @@ const PlansOverlay = ({ visible, onClose, users = [] }) => {
               />
             </div>
           </div>
-        )}
+          )}
+        </div>
       </Modal>
 
       <Modal
@@ -398,17 +399,6 @@ const PlansOverlay = ({ visible, onClose, users = [] }) => {
               min={1}
               max={12}
               className="w-full"
-            />
-          </Form.Item>
-          
-          <Form.Item
-            label="Features (one per line)"
-            name="features"
-            rules={[{ required: false }]}
-          >
-            <Input.TextArea
-              placeholder="Enter features, one per line"
-              rows={4}
             />
           </Form.Item>
           
@@ -476,17 +466,6 @@ const PlansOverlay = ({ visible, onClose, users = [] }) => {
               min={1}
               max={12}
               className="w-full"
-            />
-          </Form.Item>
-          
-          <Form.Item
-            label="Features (one per line)"
-            name="features"
-            rules={[{ required: false }]}
-          >
-            <Input.TextArea
-              placeholder="Enter features, one per line"
-              rows={4}
             />
           </Form.Item>
           

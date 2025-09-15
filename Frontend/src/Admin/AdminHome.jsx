@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getAllUsers, getSuccessfulPayments, syncUsersWithPayments, updateUserStatus, getAllPlans, getProfilePhoto } from '../utils/api';
-import { Card, Table, Modal, Divider } from 'antd';
+import { Card, Table, Modal, Divider, message } from 'antd';
+import { toast } from 'react-hot-toast';
 import { UserOutlined, ClockCircleOutlined, StopOutlined, CloseOutlined, IdcardOutlined } from '@ant-design/icons';
 import TerminatedUsers from './TerminatedUsers';
 import AddUserModal from './AddUserModal';
@@ -62,6 +63,9 @@ const Home = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null); // 'suspend' | 'terminate' | 'inactive' | null
   const [showPersonalDetails, setShowPersonalDetails] = useState(false);
+  const [showPaymentHistory, setShowPaymentHistory] = useState(false);
+  const [paymentHistory, setPaymentHistory] = useState([]);
+  const [isLoadingPayments, setIsLoadingPayments] = useState(false);
   const [profilePhotoUrl, setProfilePhotoUrl] = useState({});
 
   // Define columns inside component to access calculateEndDate
@@ -594,6 +598,117 @@ const Home = () => {
   const handleCloseModal = () => {
     setIsModalVisible(false);
     setSelectedUser(null);
+    setShowPaymentHistory(false);
+  };
+
+  const handleViewPaymentHistory = async () => {
+    if (!selectedUser) return;
+    
+    setIsLoadingPayments(true);
+    try {
+      // Get all payments for this user
+      const response = await getSuccessfulPayments();
+      
+      // Log the response to understand its structure
+      console.log('Payments API Response:', response);
+      
+      // Handle different response structures
+      let payments = [];
+      if (Array.isArray(response)) {
+        payments = response;
+      } else if (response && response.data && Array.isArray(response.data)) {
+        payments = response.data;
+      } else if (response && response.payments && Array.isArray(response.payments)) {
+        payments = response.payments;
+      } else if (response && response.transactions && Array.isArray(response.transactions)) {
+        payments = response.transactions;
+      }
+      
+      // Log the extracted payments for debugging
+      console.log('Extracted payments:', payments);
+      
+      // Log the selected user's email for debugging
+      console.log('Selected user email:', selectedUser.email);
+      
+      // Log the first payment object to see its structure
+      if (payments.length > 0) {
+        console.log('Full payment object structure:', JSON.parse(JSON.stringify(payments[0], null, 2)));
+        console.log('All payment objects:', payments);
+      }
+      
+      // Filter payments for the current user by email
+      const userPayments = payments.filter(payment => {
+        if (!payment) return false;
+        
+        // Get user email in lowercase
+        const userEmail = selectedUser.email?.toLowerCase().trim();
+        
+        // Try to find email in various possible locations
+        let paymentEmail = '';
+        
+        // Function to search for email in an object recursively
+        const findEmailInObject = (obj, depth = 0) => {
+          if (depth > 3) return null; // Prevent infinite recursion
+          if (!obj || typeof obj !== 'object') return null;
+          
+          // Check common email field names
+          const emailFields = ['email', 'customerEmail', 'customer_email', 'userEmail', 'user_email'];
+          for (const field of emailFields) {
+            if (obj[field] && typeof obj[field] === 'string' && obj[field].includes('@')) {
+              return obj[field];
+            }
+          }
+          
+          // Recursively search in nested objects
+          for (const key in obj) {
+            if (typeof obj[key] === 'object' && obj[key] !== null) {
+              const found = findEmailInObject(obj[key], depth + 1);
+              if (found) return found;
+            }
+          }
+          
+          return null;
+        };
+        
+        // Search for email in the payment object
+        paymentEmail = findEmailInObject(payment) || '';
+        
+        // Log the search result
+        console.log('Found email in payment object:', paymentEmail);
+        
+        // Log each payment email for debugging
+        console.log('Payment object:', {
+          paymentId: payment.id || payment._id || payment.payment_id,
+          allKeys: Object.keys(payment),
+          paymentEmail,
+          userEmail
+        });
+        
+        // Check for email match
+        const isMatch = userEmail && paymentEmail && paymentEmail === userEmail;
+        
+        if (isMatch) {
+          console.log('Found matching payment:', payment);
+        }
+        
+        return isMatch;
+      });
+      
+      // Log the filtered results
+      console.log('Filtered user payments:', userPayments);
+      
+      setPaymentHistory(userPayments);
+      setShowPaymentHistory(true);
+      
+      if (userPayments.length === 0) {
+        message.info('No payment history found for this user');
+      }
+    } catch (error) {
+      console.error('Error fetching payment history:', error);
+      message.error('Failed to load payment history');
+    } finally {
+      setIsLoadingPayments(false);
+    }
   };
 
   const handleAddMember = () => {
@@ -1081,8 +1196,22 @@ const Home = () => {
                   <IdcardOutlined />
                   {showPersonalDetails ? 'Hide Personal Details' : 'Show Personal Details'}
                 </button>
-                <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-                  View Payment History
+                <button 
+                  onClick={handleViewPaymentHistory}
+                  disabled={isLoadingPayments}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+                >
+                  {isLoadingPayments ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Loading...
+                    </>
+                  ) : (
+                    'View Payment History'
+                  )}
                 </button>
               </div>
 
@@ -1167,6 +1296,66 @@ const Home = () => {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* Payment History Modal */}
+      <Modal
+        title={
+          <div className="flex justify-between items-center">
+            <span>Payment History - {selectedUser?.name || 'User'}</span>
+            <span className="text-sm font-normal text-gray-500">
+              {paymentHistory.length} {paymentHistory.length === 1 ? 'payment' : 'payments'}
+            </span>
+          </div>
+        }
+        open={showPaymentHistory}
+        onCancel={() => setShowPaymentHistory(false)}
+        footer={null}
+        width={900}
+        className="[&_.ant-modal-content]:p-0 [&_.ant-modal-header]:p-4 [&_.ant-modal-header]:border-b [&_.ant-modal-header]:border-gray-200 [&_.ant-modal-body]:p-0"
+      >
+        <div className="max-h-[70vh] overflow-y-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50 sticky top-0 z-10">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-white">Date</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-white">Amount</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-white">Order ID</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-white">Coupon Code</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {paymentHistory.length > 0 ? (
+                paymentHistory.map((payment, index) => (
+                  <tr key={index} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {payment.createdAt 
+                        ? new Date(payment.createdAt).toLocaleString() 
+                        : 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {payment.orderAmount 
+                        ? `₹${Number(payment.orderAmount).toLocaleString()}` 
+                        : 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {payment.orderId || 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {payment.couponCode || 'N/A'}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="4" className="px-6 py-4 text-center text-sm text-gray-500">
+                    No payment history found for this user.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </Modal>
 
       {/* Edit User Modal */}

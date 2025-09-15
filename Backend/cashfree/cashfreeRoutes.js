@@ -1,5 +1,6 @@
 import express from 'express';
 import { createPaymentSession, getAllTransactions, getOrderDetails, printAllTransactions, fetchAndPrintAllTransactions, syncUserDataWithPayments, printSavedPayments, printPaidPayments } from './cashfreeController.js';
+import { handlePaymentWebhook } from './webhookHandler.js';
 
 const router = express.Router();
 
@@ -22,5 +23,8 @@ router.get('/all-transactions', fetchAndPrintAllTransactions);
 
 // 🚀 NEW: Sync user data with payment status
 router.post('/sync-users', syncUserDataWithPayments);
+
+// Webhook endpoint for Cashfree payment updates
+router.post('/webhook', handlePaymentWebhook);
 
 export default router;

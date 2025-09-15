@@ -22,7 +22,7 @@ const paymentSchema = new mongoose.Schema({
   paymentStatus: { 
     type: String, 
     default: 'initiated',
-    enum: ['initiated', 'paid', 'failed', 'cancelled', 'pending', 'active']
+    enum: ['initiated', 'paid', 'failed', 'cancelled', 'pending']
   },
   paymentSessionId: { 
     type: String 

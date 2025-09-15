@@ -245,6 +245,7 @@ export const fetchAndPrintAllTransactions = async (req, res) => {
       const dbRecord = paymentRecords.find(record => record.orderId === transaction.orderId);
       return {
         ...transaction,
+        couponCode: dbRecord?.couponCode, // Add couponCode to the transaction
         databaseInfo: dbRecord ? {
           userId: dbRecord.userId,
           planType: dbRecord.planType,

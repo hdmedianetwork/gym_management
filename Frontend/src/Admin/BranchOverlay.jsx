@@ -201,9 +201,10 @@ const BranchOverlay = ({ visible, onClose }) => {
       }}
       footer={null}
       width={selectedBranch ? 900 : 800}
-      className="[&_.ant-modal-content]:p-0 [&_.ant-modal-header]:p-4 [&_.ant-modal-header]:border-b [&_.ant-modal-header]:border-gray-200 [&_.ant-modal-body]:p-6"
+      className="[&_.ant-modal-content]:p-0 [&_.ant-modal-header]:p-4 [&_.ant-modal-header]:border-b [&_.ant-modal-header]:border-gray-200 [&_.ant-modal-body]:p-0"
     >
-      {loading ? (
+      <div className="max-h-[70vh] overflow-y-auto p-6">
+        {loading ? (
         <div className="flex justify-center items-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
         </div>
@@ -331,6 +332,7 @@ const BranchOverlay = ({ visible, onClose }) => {
           />
         </div>
       </Modal>
+      </div>
     </Modal>
   );
 };
