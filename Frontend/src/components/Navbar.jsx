@@ -134,6 +134,14 @@ const Navbar = () => {
       }
     },
     { 
+      name: 'Revenue', 
+      icon: <FiDollarSign className="w-5 h-5" />,
+      action: () => {
+        adminContext.openRevenueOverlay();
+        setIsOpen(false); // Close mobile menu
+      }
+    },
+    { 
       name: 'Coupon Codes', 
       icon: <FiCalendar className="w-5 h-5" />,
       action: () => {

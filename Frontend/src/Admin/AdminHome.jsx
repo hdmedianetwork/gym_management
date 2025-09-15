@@ -9,6 +9,7 @@ import EditUserModal from './EditUserModal';
 import BranchOverlay from './BranchOverlay';
 import PlansOverlay from './PlansOverlay';
 import CouponOverlay from './CouponOverlay';
+import RevenueOverlay from './RevenueOverlay';
 import { useAdmin } from '../context/AdminContext';
 
 // Helper to categorize users
@@ -44,7 +45,7 @@ const categorizeUsers = (users) => {
 
 const Home = () => {
   const adminContext = useAdmin();
-  const { showBranchOverlay, closeBranchOverlay, showPlansOverlay, closePlansOverlay, showCouponsOverlay, closeCouponsOverlay, updateUsers, openBranchOverlay, openPlansOverlay } = adminContext;
+  const { showBranchOverlay, closeBranchOverlay, showPlansOverlay, closePlansOverlay, showCouponsOverlay, closeCouponsOverlay, showRevenueOverlay, closeRevenueOverlay, updateUsers, openBranchOverlay, openPlansOverlay, openRevenueOverlay } = adminContext;
   const [activeTab, setActiveTab] = useState('active');
   const [usersData, setUsersData] = useState({ active: [], expiring: [], suspended: [], terminated: [] });
   const [tableData, setTableData] = useState([]);
@@ -1061,6 +1062,7 @@ const Home = () => {
                   </>
                 )}
               </button>
+              
               <button 
                 onClick={handleAddMember}
                 className="p-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shrink-0"
@@ -1419,6 +1421,13 @@ const Home = () => {
       <CouponOverlay
         visible={showCouponsOverlay}
         onClose={closeCouponsOverlay}
+      />
+
+      {/* Revenue Dashboard Modal */}
+      <RevenueOverlay
+        visible={showRevenueOverlay}
+        onClose={closeRevenueOverlay}
+        users={[...usersData.active, ...usersData.expiring, ...usersData.suspended, ...usersData.terminated]}
       />
     </div>
   );
