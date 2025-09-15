@@ -38,6 +38,14 @@ const paymentSchema = new mongoose.Schema({
   planAmount: {
     type: Number
   },
+  planDuration: {
+    type: Number
+  },
+  couponCode: {
+    type: String,
+    trim: true,
+    uppercase: true
+  },
   // Store Cashfree response data
   cashfreeData: {
     type: mongoose.Schema.Types.Mixed

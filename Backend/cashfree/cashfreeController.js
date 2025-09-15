@@ -18,7 +18,7 @@ if (!CF_APP_ID || !CF_SECRET) {
 
 export const createPaymentSession = async (req, res) => {
   try {
-  const { orderId, orderAmount, customerName, customerEmail, customerPhone, userId, planType, planAmount, planDuration } = req.body;
+  const { orderId, orderAmount, customerName, customerEmail, customerPhone, userId, planType, planAmount, planDuration, couponCode } = req.body;
     // Cashfree customer_id must be alphanumeric and may contain underscore or hyphens
     const customerId = (customerEmail || `guest_${Date.now()}`).replace(/[^A-Za-z0-9_-]/g, '_');
 
@@ -41,7 +41,8 @@ export const createPaymentSession = async (req, res) => {
       },
       planType,
       planAmount,
-      planDuration
+      planDuration,
+      couponCode: couponCode || null
     });
 
     await paymentRecord.save();
@@ -83,7 +84,8 @@ export const createPaymentSession = async (req, res) => {
         cashfreeData: response.data,
         // ensure we persist any plan metadata that might have been missing
         planAmount: paymentRecord.planAmount || planAmount,
-        planDuration: paymentRecord.planDuration || planDuration
+        planDuration: paymentRecord.planDuration || planDuration,
+        couponCode: paymentRecord.couponCode || couponCode || null
       }
     );
 

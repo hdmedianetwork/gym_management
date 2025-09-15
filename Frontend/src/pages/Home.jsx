@@ -3,10 +3,11 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { fadeIn, staggerContainer } from '../utils/motion';
 import { createCashfreeSession } from '../utils/payment';
-import { getAllPlans } from '../utils/api';
-import { FiAlertTriangle, FiStar, FiCheckCircle } from 'react-icons/fi';
+import { getAllPlans, getCouponByCode } from '../utils/api';
+import { FiAlertTriangle, FiStar, FiCheckCircle, FiTag } from 'react-icons/fi';
 import Navbar from '../components/Navbar';
 import toast from 'react-hot-toast';
+import { Input, Button } from 'antd';
 
 // Cashfree script loader (v3)
 const loadCashfreeScript = () => {
@@ -81,6 +82,10 @@ const Home = () => {
   const [isSubscribed, setIsSubscribed] = React.useState(false);
   const [showInitialBanner, setShowInitialBanner] = React.useState(true);
   const [isBannerVisible, setIsBannerVisible] = React.useState(true);
+  const [couponCodes, setCouponCodes] = React.useState({});
+  const [appliedCoupons, setAppliedCoupons] = React.useState({});
+  const [applyingCoupon, setApplyingCoupon] = React.useState({});
+  const [couponErrors, setCouponErrors] = React.useState({});
 
   React.useEffect(() => {
     const timer = setTimeout(() => {
@@ -152,9 +157,76 @@ const Home = () => {
     loadCashfreeScript();
   }, []);
 
-  const handleSubscribe = async (plan) => {
+  const handleApplyCoupon = async (plan) => {
+    const couponCode = couponCodes[plan._id];
+    if (!couponCode || !couponCode.trim()) {
+      toast.error('Please enter a coupon code');
+      return;
+    }
+
+    setApplyingCoupon(prev => ({ ...prev, [plan._id]: true }));
+    setCouponErrors(prev => ({ ...prev, [plan._id]: null }));
+
+    try {
+      const coupon = await getCouponByCode(couponCode.trim().toUpperCase());
+      
+      // Calculate discount
+      let discountAmount = 0;
+      let finalAmount = plan.amount;
+      
+      if (coupon.discountType === 'percentage') {
+        discountAmount = Math.round((plan.amount * parseFloat(coupon.discount)) / 100);
+        finalAmount = plan.amount - discountAmount;
+      } else {
+        discountAmount = parseFloat(coupon.discount);
+        finalAmount = Math.max(0, plan.amount - discountAmount);
+      }
+
+      // Store applied coupon data
+      setAppliedCoupons(prev => ({
+        ...prev,
+        [plan._id]: {
+          ...coupon,
+          discountAmount,
+          finalAmount,
+          originalAmount: plan.amount
+        }
+      }));
+
+      toast.success(`Coupon applied! You saved ₹${discountAmount.toLocaleString()}`);
+    } catch (error) {
+      console.error('Error applying coupon:', error);
+      setCouponErrors(prev => ({ 
+        ...prev, 
+        [plan._id]: error.message || 'Invalid or expired coupon code' 
+      }));
+      toast.error('Invalid or expired coupon code');
+    } finally {
+      setApplyingCoupon(prev => ({ ...prev, [plan._id]: false }));
+    }
+  };
+
+  const handleRemoveCoupon = (plan) => {
+    setAppliedCoupons(prev => {
+      const newState = { ...prev };
+      delete newState[plan._id];
+      return newState;
+    });
+    setCouponCodes(prev => ({ ...prev, [plan._id]: '' }));
+    setCouponErrors(prev => ({ ...prev, [plan._id]: null }));
+    toast.success('Coupon removed');
+  };
+
+  const handleGetStarted = async (plan) => {
+    const appliedCoupon = appliedCoupons[plan._id];
+    const finalAmount = appliedCoupon ? appliedCoupon.finalAmount : plan.amount;
+    const couponCode = appliedCoupon ? appliedCoupon.code : '';
+    
+    await processSubscription({ ...plan, amount: finalAmount }, couponCode);
+  };
+
+  const processSubscription = async (plan, coupon = '') => {
     if (!user) {
-      // Not authenticated, redirect to login
       navigate('/login');
       return;
     }
@@ -191,6 +263,7 @@ const Home = () => {
             planType: plan.planType || plan.name, // Include plan type
             planAmount: plan.amount, // Include plan amount
             planDuration: plan.duration || 1, // Include plan duration
+            couponCode: coupon || ''
           });
 
           if (!paymentSessionId) throw new Error('No paymentSessionId received');
@@ -453,49 +526,99 @@ const Home = () => {
                         </div>
                       </motion.div>
                       
-                      <ul className="space-y-3.5 text-left mb-10">
-                        {plan.features.map((feature, i) => (
-                          <motion.li 
-                            key={i} 
-                            className="flex items-start group"
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ 
-                              delay: 0.5 + (i * 0.05),
-                              type: 'spring',
-                              stiffness: 300
-                            }}
-                          >
-                            <motion.div 
-                              className="flex-shrink-0 mt-1"
-                              whileHover={{ scale: 1.2, rotate: 5 }}
-                              transition={{ type: 'spring', stiffness: 500 }}
+                      {/* Coupon Section */}
+                      {!appliedCoupons[plan._id] ? (
+                        <div className="mt-6 mb-4">
+                          <div className="flex items-center gap-1">
+                            <Input
+                              prefix={<FiTag className="text-gray-400" />}
+                              placeholder="Coupon code"
+                              value={couponCodes[plan._id] || ''}
+                              onChange={(e) => setCouponCodes(prev => ({
+                                ...prev,
+                                [plan._id]: e.target.value.toUpperCase()
+                              }))}
+                              className="flex-1"
+                              size="large"
+                              onPressEnter={() => handleApplyCoupon(plan)}
+                              status={couponErrors[plan._id] ? 'error' : ''}
+                            />
+                            <Button
+                              type="primary"
+                              size="large"
+                              onClick={() => handleApplyCoupon(plan)}
+                              loading={applyingCoupon[plan._id]}
+                              disabled={!couponCodes[plan._id]?.trim()}
+                              className="h-10 px-4"
                             >
-                              <svg 
-                                className={`h-5 w-5 ${plan.popular ? 'text-gray-900' : 'text-gray-600'}`} 
-                                fill="none" 
-                                viewBox="0 0 24 24" 
-                                stroke="currentColor"
-                              >
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                              </svg>
-                            </motion.div>
-                            <span className="ml-3 text-gray-600 group-hover:text-gray-900 transition-colors duration-200">
-                              {feature}
+                              Apply
+                            </Button>
+                          </div>
+                          {couponErrors[plan._id] && (
+                            <p className="mt-1 text-xs text-red-500 text-center">
+                              {couponErrors[plan._id]}
+                            </p>
+                          )}
+                          {!couponErrors[plan._id] && (
+                            <p className="mt-1 text-xs text-gray-400 text-center">
+                              Enter coupon code if you have one
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="mt-6 mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                              <FiCheckCircle className="text-green-600 mr-2" />
+                              <div>
+                                <p className="text-sm font-medium text-green-800">
+                                  {appliedCoupons[plan._id].code} Applied
+                                </p>
+                                <p className="text-xs text-green-600">
+                                  You saved ₹{appliedCoupons[plan._id].discountAmount.toLocaleString()}
+                                </p>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => handleRemoveCoupon(plan)}
+                              className="text-green-600 hover:text-green-800 text-sm font-medium"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Updated Price Display */}
+                      {appliedCoupons[plan._id] && (
+                        <div className="mb-6">
+                          <div className="flex items-center justify-center gap-3">
+                            <span className="text-2xl font-medium text-gray-400 line-through">
+                              ₹{plan.amount.toLocaleString()}
                             </span>
-                          </motion.li>
-                        ))}
-                      </ul>
+                            <span className="text-3xl font-bold text-green-600">
+                              ₹{appliedCoupons[plan._id].finalAmount.toLocaleString()}
+                            </span>
+                          </div>
+                          <p className="text-sm text-green-600 text-center mt-1">
+                            {appliedCoupons[plan._id].discountType === 'percentage' 
+                              ? `${appliedCoupons[plan._id].discount}% discount applied`
+                              : `₹${appliedCoupons[plan._id].discount} discount applied`
+                            }
+                          </p>
+                        </div>
+                      )}
                       
                       <motion.div 
-                        className="mt-8"
+                        className="mt-4"
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                       >
-                        <button
-                          onClick={() => handleSubscribe(plan)}
+                        <Button
+                          onClick={() => handleGetStarted(plan)}
+                          loading={selectedPlan === plan}
                           disabled={selectedPlan === plan}
-                          className={`w-full py-3.5 px-6 rounded-xl font-medium transition-all duration-300 ${
+                          className={`w-full h-auto py-3.5 px-6 rounded-xl font-medium transition-all duration-300 ${
                             selectedPlan === plan
                               ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
                               : plan.popular 
@@ -517,7 +640,7 @@ const Home = () => {
                               Get Started
                             </span>
                           )}
-                        </button>
+                        </Button>
                       </motion.div>
                     </div>
                   </div>

@@ -20,7 +20,18 @@ const getApiBase = () => {
   return 'http://localhost:5000';
 };
 
-export async function createCashfreeSession({ orderId, orderAmount, customerName, customerEmail, customerPhone, returnUrl }) {
+export async function createCashfreeSession({ 
+  orderId, 
+  orderAmount, 
+  customerName, 
+  customerEmail, 
+  customerPhone, 
+  returnUrl, 
+  planType, 
+  planAmount, 
+  planDuration, 
+  couponCode 
+}) {
   const API_URL = getApiBase();
   try { console.info('[Payment] Using API base:', API_URL); } catch (_) {}
   const res = await fetch(`${API_URL}/api/payment/create-session`, {
@@ -28,7 +39,18 @@ export async function createCashfreeSession({ orderId, orderAmount, customerName
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ orderId, orderAmount, customerName, customerEmail, customerPhone, returnUrl })
+    body: JSON.stringify({ 
+      orderId, 
+      orderAmount, 
+      customerName, 
+      customerEmail, 
+      customerPhone, 
+      returnUrl, 
+      planType, 
+      planAmount, 
+      planDuration, 
+      couponCode 
+    })
   });
   let data;
   try {
