@@ -85,8 +85,8 @@ const Home = () => {
       },
       { title: 'Email', dataIndex: 'email', key: 'email' },
       { 
-        title: 'Branch', 
-        dataIndex: 'branch', 
+        title: 'Branch',
+        dataIndex: 'branch',
         key: 'branch',
         render: (branch) => branch ? branch : 'N/A'
       },
@@ -1087,6 +1087,19 @@ const Home = () => {
           </div>
           <div className="rounded-lg border border-gray-200 overflow-hidden">
             <div className="overflow-x-auto">
+              <style jsx global>{`
+                .ant-table-thead > tr > th {
+                  white-space: nowrap !important;
+                  overflow: hidden !important;
+                  text-overflow: ellipsis !important;
+                  background: #f9fafb !important;
+                  font-weight: 600 !important;
+                  color: #4b5563 !important;
+                }
+                .ant-table-cell {
+                  white-space: nowrap !important;
+                }
+              `}</style>
               <Table 
                 columns={tableColumns} 
                 dataSource={filteredData} 
@@ -1101,7 +1114,7 @@ const Home = () => {
                   y: 'calc(70vh - 300px)',
                   scrollToFirstRowOnChange: true
                 }}
-                className="min-w-full [&_.ant-table-thead>tr>th]:bg-gray-50 [&_.ant-table-thead>tr>th]:text-gray-600 [&_.ant-table-tbody>tr>td]:text-gray-700"
+                className="min-w-full [&_.ant-table-thead>tr>th]:whitespace-nowrap [&_.ant-table-tbody>tr>td]:whitespace-nowrap [&_.ant-table-thead>tr>th]:bg-gray-50 [&_.ant-table-thead>tr>th]:text-gray-600 [&_.ant-table-tbody>tr>td]:text-gray-700"
                 locale={{
                   emptyText: searchText ? 'No matching records found' : 'No data'
                 }}

@@ -86,6 +86,8 @@ const Home = () => {
   const [appliedCoupons, setAppliedCoupons] = React.useState({});
   const [applyingCoupon, setApplyingCoupon] = React.useState({});
   const [couponErrors, setCouponErrors] = React.useState({});
+  const [latestPayment, setLatestPayment] = React.useState(null);
+  const [isLoadingPayment, setIsLoadingPayment] = React.useState(false);
 
   React.useEffect(() => {
     const timer = setTimeout(() => {
@@ -96,6 +98,182 @@ const Home = () => {
 
     return () => clearTimeout(timer);
   }, []);
+
+  // Fetch latest payment for current user by email
+  const fetchLatestPayment = async (email) => {
+    try {
+      setIsLoadingPayment(true);
+      if (!email) return;
+
+      // Import here to avoid circular imports in case of refactors
+      const { getSuccessfulPayments } = await import('../utils/api');
+      const raw = await getSuccessfulPayments();
+      console.log('[Home] getSuccessfulPayments raw type:', Array.isArray(raw) ? 'array' : typeof raw);
+      console.log('[Home] getSuccessfulPayments raw value:', raw);
+
+      // Normalize API response to an array
+      const paymentsArray = Array.isArray(raw)
+        ? raw
+        : Array.isArray(raw?.transactions)
+          ? raw.transactions
+          : Array.isArray(raw?.data)
+            ? raw.data
+            : Array.isArray(raw?.payments)
+              ? raw.payments
+              : Array.isArray(raw?.results)
+                ? raw.results
+                : [];
+      console.log('[Home] Normalized paymentsArray length:', paymentsArray.length);
+      try {
+        console.log('[Home] First item keys:', paymentsArray[0] ? Object.keys(paymentsArray[0]) : 'N/A');
+        console.log('[Home] First item.customerDetails:', paymentsArray[0]?.customerDetails);
+        const getEmailForLog = (p) => (
+          p?.email || p?.customerEmail || p?.user?.email || p?.customerDetails?.customerEmail || p?.customerDetails?.customer_email || p?.cashfreeData?.customer_details?.customer_email || null
+        );
+        const detectedEmails = paymentsArray.map(p => getEmailForLog(p)).filter(Boolean);
+        console.log('[Home] Sample detected emails (first 20):', detectedEmails.slice(0, 20));
+        const firstThreeDiagnostics = paymentsArray.slice(0,3).map((p, idx) => ({
+          idx,
+          customerDetails: p?.customerDetails,
+          computedEmail: getEmailForLog(p),
+        }));
+        console.log('[Home] First three items diagnostics:', firstThreeDiagnostics);
+      } catch (e) {
+        console.log('[Home] Could not list detected emails:', e);
+      }
+
+      // Helper to extract email from various shapes
+      const getPaymentEmail = (p) =>
+        (
+          p.email ||
+          p.customerEmail ||
+          p.user?.email ||
+          p.customerDetails?.customerEmail ||
+          p.customerDetails?.customer_email ||
+          p.cashfreeData?.customer_details?.customer_email ||
+          ''
+        ).toLowerCase();
+
+      // Filter by email (various possible fields)
+      const targetEmail = String(email).trim().toLowerCase();
+      console.log('[Home] Target email for filtering (trimmed):', targetEmail);
+      const filteredByEmail = paymentsArray.filter(p => {
+        const e = getPaymentEmail(p);
+        return e && e.trim().toLowerCase() === targetEmail;
+      });
+      console.log('[Home] Filtered by email count:', filteredByEmail.length);
+      let byString = [];
+      if (filteredByEmail.length === 0) {
+        // Broad substring search across objects for troubleshooting
+        byString = paymentsArray.filter(p => {
+          try { return JSON.stringify(p).toLowerCase().includes(targetEmail); } catch { return false; }
+        });
+        console.log('[Home] Fallback substring search count:', byString.length);
+        if (byString.length > 0) {
+          console.log('[Home] Example of substring match item:', byString[0]);
+        }
+      }
+
+      // Fallback: try matching by phone if email yielded 0
+      let filteredPrimary = filteredByEmail.length > 0 ? filteredByEmail : byString;
+      if (filteredPrimary.length === 0) {
+        // Final fallback: recursively inspect values to see if any string equals the email exactly
+        const looksLikeEmail = (s) => typeof s === 'string' && s.toLowerCase() === targetEmail;
+        const containsEmailDeep = (obj, depth = 0) => {
+          if (!obj || depth > 5) return false;
+          if (looksLikeEmail(obj)) return true;
+          if (typeof obj === 'object') {
+            for (const k in obj) {
+              if (containsEmailDeep(obj[k], depth + 1)) return true;
+            }
+          }
+          return false;
+        };
+        const byDeep = paymentsArray.filter(p => containsEmailDeep(p));
+        console.log('[Home] Deep search fallback count:', byDeep.length);
+        if (byDeep.length > 0) filteredPrimary = byDeep;
+      }
+      if (filteredPrimary.length === 0 && user?.mobile) {
+        const targetPhone = String(user.mobile).trim();
+        const getPhone = (p) => (
+          p?.customerPhone || p?.phone || p?.customerDetails?.customerPhone || p?.customerDetails?.customer_phone || p?.cashfreeData?.customer_details?.customer_phone || null
+        );
+        const byPhone = paymentsArray.filter(p => {
+          const ph = getPhone(p);
+          return ph && String(ph).trim() === targetPhone;
+        });
+        console.log('[Home] Fallback filter by phone. targetPhone:', targetPhone, 'count:', byPhone.length);
+        if (byPhone.length > 0) filteredPrimary = byPhone;
+      }
+
+      // From schema, successful orders have orderStatus: 'PAID'
+      const filtered = filteredPrimary.filter(p => String(p.orderStatus || p.paymentStatus || '').toUpperCase() === 'PAID');
+      console.log('[Home] Filtered by email + PAID count:', filtered.length);
+      if (filtered.length === 0) {
+        // Log a few entries to help diagnose
+        console.log('[Home] No PAID payments matched. First primary-matched item (if any):', filteredPrimary[0]);
+      }
+
+      if (filtered.length === 0) {
+        setLatestPayment(null);
+        return;
+      }
+
+      // Helper to safely parse different date formats (Date, ISO, BSON-like)
+      const parseDateVal = (val) => {
+        try {
+          if (!val) return 0;
+          if (typeof val === 'string' || typeof val === 'number') return new Date(val).getTime();
+          if (val?.$date) {
+            const inner = val.$date;
+            if (typeof inner === 'string' || typeof inner === 'number') return new Date(inner).getTime();
+            if (inner?.$numberLong) return Number(inner.$numberLong);
+          }
+          return new Date(val).getTime();
+        } catch { return 0; }
+      };
+
+      // Sort by date desc using paymentCompletedAt > createdAt > cashfreeData.created_at
+      const getDate = (p) => {
+        return (
+          parseDateVal(p.paymentCompletedAt) ||
+          parseDateVal(p.createdAt) ||
+          parseDateVal(p.cashfreeData?.created_at) ||
+          parseDateVal(p.updatedAt) ||
+          parseDateVal(p.date)
+        );
+      };
+      filtered.sort((a, b) => getDate(b) - getDate(a));
+      const latest = filtered[0];
+      console.log('[Home] Latest matched payment object:', latest);
+
+      // Extract numeric amount from various shapes (including BSON-like)
+      const extractAmount = (v) => {
+        if (v == null) return 0;
+        if (typeof v === 'number') return v;
+        if (typeof v === 'string') return Number(v) || 0;
+        if (v.$numberInt) return Number(v.$numberInt) || 0;
+        if (v.$numberDouble) return Number(v.$numberDouble) || 0;
+        if (v.$numberDecimal) return Number(v.$numberDecimal) || 0;
+        return Number(v) || 0;
+      };
+
+      // Build a compact object for UI
+      setLatestPayment({
+        planName: latest.planName || latest.plan?.name || latest.planType || latest.databaseInfo?.planType || 'Gym Membership',
+        amount: latest.amount || latest.planAmount || extractAmount(latest.orderAmount) || extractAmount(latest.cashfreeData?.order_amount) || 0,
+        paymentDate: (parseDateVal(latest.paymentCompletedAt) || parseDateVal(latest.createdAt) || parseDateVal(latest.cashfreeData?.created_at)) || null,
+        duration: latest.planDuration || latest.plan?.duration || 'N/A',
+        paymentId: latest.orderId || latest.paymentId || latest._id || 'N/A',
+        status: latest.orderStatus || latest.status || latest.paymentStatus || latest.cashfreeData?.order_status || 'PAID'
+      });
+    } catch (err) {
+      console.error('[Home] Failed to fetch latest payment:', err);
+      setLatestPayment(null);
+    } finally {
+      setIsLoadingPayment(false);
+    }
+  };
 
   // Fetch plans from API
   React.useEffect(() => {
@@ -156,6 +334,17 @@ const Home = () => {
     }
     loadCashfreeScript();
   }, []);
+
+  // When user is available, fetch their latest payment
+  React.useEffect(() => {
+    if (user?.email) {
+      const trimmedEmail = String(user.email).trim();
+      console.log('[Home] Triggering fetchLatestPayment for email (trimmed):', trimmedEmail);
+      fetchLatestPayment(trimmedEmail);
+    } else {
+      console.log('[Home] No user email found on mount. user:', user);
+    }
+  }, [user?.email]);
 
   const handleApplyCoupon = async (plan) => {
     const couponCode = couponCodes[plan._id];
@@ -344,7 +533,61 @@ const Home = () => {
           </div>
         </motion.div>
       )}
-      
+
+      {/* Membership Summary */}
+      {user && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+          {isLoadingPayment ? (
+            <div className="bg-white border border-gray-200 rounded-xl p-6 text-gray-600">
+              Fetching your membership details...
+            </div>
+          ) : latestPayment ? (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-8 shadow-sm"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900">Your Membership</h3>
+                  <p className="text-sm text-gray-500">Linked to {user.email}</p>
+                </div>
+                {latestPayment.status && (
+                  <span className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                    {String(latestPayment.status).toUpperCase()}
+                  </span>
+                )}
+              </div>
+
+              <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+               
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <p className="text-xs text-gray-500">Amount</p>
+                  <p className="mt-1 font-medium text-gray-900">₹{Number(latestPayment.amount || 0).toLocaleString('en-IN')}</p>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <p className="text-xs text-gray-500">Payment Date</p>
+                  <p className="mt-1 font-medium text-gray-900">{latestPayment.paymentDate ? new Date(latestPayment.paymentDate).toLocaleDateString('en-IN') : 'N/A'}</p>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <p className="text-xs text-gray-500">Duration</p>
+                  <p className="mt-1 font-medium text-gray-900">{latestPayment.duration} month{latestPayment.duration > 1 ? 's' : ''}</p>
+                </div>
+              </div>
+
+              <div className="mt-4 text-xs text-gray-500">
+                Payment ID: <span className="font-mono">{latestPayment.paymentId}</span>
+              </div>
+            </motion.div>
+          ) : (
+            <div className="bg-white border border-gray-200 rounded-xl p-6 text-gray-600">
+              No payments found for {user.email}. Choose a plan below to get started.
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Animated Background */}
       <div className="fixed inset-0 overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-gray-200/30 via-transparent to-transparent"></div>

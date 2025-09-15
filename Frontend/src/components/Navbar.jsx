@@ -118,6 +118,14 @@ const Navbar = () => {
   // Navigation links for admin users
   const adminNavLinks = [
     { 
+      name: 'Admin', 
+      icon: <FiSettings className="w-5 h-5" />,
+      action: () => {
+        navigate('/admin');
+        setIsOpen(false); // Close mobile menu
+      }
+    },
+    { 
       name: 'Branches', 
       icon: <FiHome className="w-5 h-5" />,
       action: () => {
