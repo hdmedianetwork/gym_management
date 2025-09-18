@@ -88,6 +88,7 @@ const Home = () => {
   const [couponErrors, setCouponErrors] = React.useState({});
   const [latestPayment, setLatestPayment] = React.useState(null);
   const [isLoadingPayment, setIsLoadingPayment] = React.useState(false);
+  const [isAdmin, setIsAdmin] = React.useState(false);
 
   React.useEffect(() => {
     const timer = setTimeout(() => {
@@ -261,9 +262,10 @@ const Home = () => {
       // Build a compact object for UI
       setLatestPayment({
         planName: latest.planName || latest.plan?.name || latest.planType || latest.databaseInfo?.planType || 'Gym Membership',
-        amount: latest.amount || latest.planAmount || extractAmount(latest.orderAmount) || extractAmount(latest.cashfreeData?.order_amount) || 0,
+        amount: latest.amount || latest.planAmount || latest.databaseInfo?.planAmount || extractAmount(latest.orderAmount) || extractAmount(latest.cashfreeData?.order_amount) || 0,
         paymentDate: (parseDateVal(latest.paymentCompletedAt) || parseDateVal(latest.createdAt) || parseDateVal(latest.cashfreeData?.created_at)) || null,
-        duration: latest.planDuration || latest.plan?.duration || 'N/A',
+        // Ensure duration supports BSON-like numeric shapes and include DB fallback
+        duration: extractAmount(latest.planDuration || latest.plan?.duration || latest.databaseInfo?.planDuration),
         paymentId: latest.orderId || latest.paymentId || latest._id || 'N/A',
         status: latest.orderStatus || latest.status || latest.paymentStatus || latest.cashfreeData?.order_status || 'PAID'
       });
@@ -332,6 +334,8 @@ const Home = () => {
     if (userData) {
       setUser(JSON.parse(userData));
     }
+    // Detect admin session
+    setIsAdmin(localStorage.getItem('isAdmin') === 'true');
     loadCashfreeScript();
   }, []);
 
@@ -534,8 +538,8 @@ const Home = () => {
         </motion.div>
       )}
 
-      {/* Membership Summary */}
-      {user && (
+      {/* Membership Summary (hidden for admin) */}
+      {!isAdmin && user && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
           {isLoadingPayment ? (
             <div className="bg-white border border-gray-200 rounded-xl p-6 text-gray-600">

@@ -245,10 +245,16 @@ export const fetchAndPrintAllTransactions = async (req, res) => {
       const dbRecord = paymentRecords.find(record => record.orderId === transaction.orderId);
       return {
         ...transaction,
+        // Expose key plan metadata at the top level for frontend consumption
+        planType: dbRecord?.planType ?? transaction.planType,
+        planAmount: dbRecord?.planAmount ?? transaction.planAmount,
+        planDuration: dbRecord?.planDuration ?? transaction.planDuration,
         couponCode: dbRecord?.couponCode, // Add couponCode to the transaction
         databaseInfo: dbRecord ? {
           userId: dbRecord.userId,
           planType: dbRecord.planType,
+          planAmount: dbRecord.planAmount,
+          planDuration: dbRecord.planDuration,
           createdInDb: dbRecord.createdAt,
           paymentStatus: dbRecord.paymentStatus
         } : null
