@@ -909,7 +909,7 @@ const Home = () => {
           </div>
         </div>
       )}
-      <h1 className="text-2xl font-bold mb-4 sm:mb-8 text-white">Dashboard</h1>
+      <h1 className="text-2xl font-bold mb-4 sm:mb-8">Dashboard</h1>
       
       {/* Mobile View - Tabs */}
       <div className="md:hidden mb-6 bg-white rounded-lg shadow-sm p-1">

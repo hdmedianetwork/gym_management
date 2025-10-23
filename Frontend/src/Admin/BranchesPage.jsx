@@ -171,21 +171,21 @@ const BranchesPage = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-white text-xl">Loading...</div>
+        <div className="text-gray-900 text-xl">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen p-6">
+    <div className="min-h-screen p-6 bg-white text-gray-900">
       <div className="max-w-7xl mx-auto">
         {!selectedBranch ? (
           // Branch overview
           <div className="space-y-6">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <ShopOutlined className="text-3xl text-blue-500" />
-                <h1 className="text-3xl font-bold text-white">Branch Management</h1>
+                <ShopOutlined className="text-3xl text-blue-600" />
+                <h1 className="text-3xl font-bold text-gray-900">Branch Management</h1>
               </div>
               <button
                 onClick={() => setIsAddBranchModalVisible(true)}
@@ -201,23 +201,23 @@ const BranchesPage = () => {
                 branchStats.map((branch) => (
                   <Card
                     key={branch._id}
-                    className="cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-2 border-gray-700 rounded-xl bg-gray-800"
+                    className="cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border border-gray-200 rounded-xl bg-white"
                     onClick={() => handleBranchClick(branch)}
                     styles={{ body: { padding: '24px' } }}
                   >
                     <div className="text-center space-y-4">
-                      <div className="text-4xl p-4 bg-blue-500/20 text-blue-400 rounded-full mx-auto w-fit">
+                      <div className="text-4xl p-4 bg-blue-50 text-blue-600 rounded-full mx-auto w-fit">
                         <ShopOutlined />
                       </div>
                       
                       <div>
-                        <h4 className="text-xl font-semibold text-white mb-2">
+                        <h4 className="text-xl font-semibold text-gray-900 mb-2">
                           {branch.name}
                         </h4>
-                        <div className="space-y-1 text-gray-300">
-                          <p className="text-sm">Total Users: <span className="font-semibold">{branch.totalUsers}</span></p>
-                          <p className="text-sm">Active: <span className="font-semibold text-green-400">{branch.activeUsers}</span></p>
-                          <p className="text-sm">Revenue: <span className="font-semibold text-blue-400">₹{branch.totalRevenue.toLocaleString()}</span></p>
+                        <div className="space-y-1 text-gray-600">
+                          <p className="text-sm">Total Users: <span className="font-semibold text-gray-800">{branch.totalUsers}</span></p>
+                          <p className="text-sm">Active: <span className="font-semibold text-green-600">{branch.activeUsers}</span></p>
+                          <p className="text-sm">Revenue: <span className="font-semibold text-blue-600">₹{branch.totalRevenue.toLocaleString()}</span></p>
                         </div>
                       </div>
                     </div>
@@ -225,9 +225,9 @@ const BranchesPage = () => {
                 ))
               ) : (
                 <div className="col-span-3 text-center py-20">
-                  <ShopOutlined className="text-8xl text-gray-600 mb-4" />
-                  <p className="text-gray-400 text-xl">No branch data available</p>
-                  <p className="text-sm text-gray-500 mt-2">Add branches to get started</p>
+                  <ShopOutlined className="text-8xl text-gray-300 mb-4" />
+                  <p className="text-gray-500 text-xl">No branch data available</p>
+                  <p className="text-sm text-gray-400 mt-2">Add branches to get started</p>
                 </div>
               )}
             </div>
@@ -235,34 +235,34 @@ const BranchesPage = () => {
         ) : (
           // Branch users detail
           <div className="space-y-6">
-            <div className="flex items-center justify-between pb-4 border-b border-gray-700">
+            <div className="flex items-center justify-between pb-4 border-b border-gray-200">
               <div className="flex items-center gap-4">
                 <button
                   onClick={() => {
                     setSelectedBranch(null);
                     setBranchUsers([]);
                   }}
-                  className="p-2 hover:bg-gray-700 rounded-full transition-colors"
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
                   title="Back to branches"
                 >
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                   </svg>
                 </button>
                 
                 <div>
-                  <h2 className="text-2xl font-bold text-white">{selectedBranch.name}</h2>
-                  <p className="text-gray-400">{selectedBranch.totalUsers} total users, {selectedBranch.activeUsers} active</p>
+                  <h2 className="text-2xl font-bold text-gray-900">{selectedBranch.name}</h2>
+                  <p className="text-gray-600">{selectedBranch.totalUsers} total users, {selectedBranch.activeUsers} active</p>
                 </div>
               </div>
               
               <div className="text-right">
-                <p className="text-sm text-gray-400">Total Revenue</p>
-                <p className="text-2xl font-bold text-blue-400">₹{selectedBranch.totalRevenue.toLocaleString()}</p>
+                <p className="text-sm text-gray-600">Total Revenue</p>
+                <p className="text-2xl font-bold text-blue-600">₹{selectedBranch.totalRevenue.toLocaleString()}</p>
               </div>
             </div>
             
-            <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
               <Table
                 columns={userColumns}
                 dataSource={branchUsers}
@@ -276,13 +276,12 @@ const BranchesPage = () => {
                   x: 'max-content',
                   y: 500
                 }}
-                className="[&_.ant-table]:bg-gray-800 [&_.ant-table-thead>tr>th]:bg-gray-700 [&_.ant-table-thead>tr>th]:text-gray-200 [&_.ant-table-tbody>tr>td]:text-gray-300 [&_.ant-table-tbody>tr]:bg-gray-800 [&_.ant-table-tbody>tr:hover>td]:bg-gray-700"
+                className="[&_.ant-table]:bg-white [&_.ant-table-thead>tr>th]:bg-gray-50 [&_.ant-table-thead>tr>th]:text-gray-700 [&_.ant-table-thead>tr>th]:font-semibold [&_.ant-table-tbody>tr>td]:text-gray-700 [&_.ant-table-tbody>tr:hover>td]:bg-gray-50"
               />
             </div>
           </div>
         )}
         
-        {/* Add Branch Modal */}
         <Modal
           title="Add New Branch"
           open={isAddBranchModalVisible}

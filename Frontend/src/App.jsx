@@ -43,7 +43,7 @@ function AppContent() {
   const showNavbar = !hideNavbarPaths.includes(location.pathname);
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white">
+    <div className="min-h-screen bg-white text-gray-900">
       <ToastContainer position="top-right" autoClose={5000} hideProgressBar={false} newestOnTop closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
       {showNavbar && <Navbar />}
       <div className={`min-h-screen ${showNavbar ? 'lg:ml-64 pt-16 lg:pt-0' : ''}`}>

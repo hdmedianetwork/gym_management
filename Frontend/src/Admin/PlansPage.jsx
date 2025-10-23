@@ -167,7 +167,7 @@ const PlansPage = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-white text-xl">Loading...</div>
+        <div className="text-black text-xl">Loading...</div>
       </div>
     );
   }
@@ -175,16 +175,16 @@ const PlansPage = () => {
   return (
     <>
       {modalContextHolder}
-      <div className="min-h-screen p-6">
+      <div className="min-h-screen p-6 bg-white text-gray-900">
         <div className="max-w-7xl mx-auto">
           <div className="space-y-6">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <CreditCardOutlined className="text-3xl text-green-500" />
+                <CreditCardOutlined className="text-3xl text-green-600" />
                 <div>
-                  <h1 className="text-3xl font-bold text-white">Plans Management</h1>
+                  <h1 className="text-3xl font-bold text-gray-900">Plans Management</h1>
                   {plans.length > 0 && (
-                    <p className="text-sm text-gray-400 mt-1">
+                    <p className="text-sm text-gray-600 mt-1">
                       Total: {plans.length} plans available
                     </p>
                   )}
@@ -205,7 +205,7 @@ const PlansPage = () => {
                 return (
                   <Card
                     key={plan._id || index}
-                    className="transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-2 border-gray-700 rounded-xl bg-gray-800 relative group"
+                    className="transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border border-gray-200 rounded-xl bg-white relative group"
                     styles={{ body: { padding: '24px' } }}
                   >
                     <div className="absolute top-3 right-3 flex gap-1">
@@ -216,7 +216,7 @@ const PlansPage = () => {
                           e.stopPropagation();
                           openEditModal(plan);
                         }}
-                        className="text-blue-400 hover:bg-blue-500/20 hover:text-blue-300"
+                        className="text-blue-600 hover:bg-blue-50 hover:text-blue-700"
                       />
                       <Button
                         type="text"
@@ -226,39 +226,39 @@ const PlansPage = () => {
                           e.stopPropagation();
                           handleDeletePlan(plan._id);
                         }}
-                        className="text-red-400 hover:bg-red-500/20"
+                        className="text-red-600 hover:bg-red-50"
                       />
                     </div>
 
                     <div className="text-center space-y-4">
-                      <div className="text-4xl p-4 bg-green-500/20 text-green-400 rounded-full mx-auto w-fit">
+                      <div className="text-4xl p-4 bg-green-50 text-green-600 rounded-full mx-auto w-fit">
                         <CreditCardOutlined />
                       </div>
                       
                       <div>
-                        <h4 className="text-xl font-semibold text-white mb-2 capitalize">
+                        <h4 className="text-xl font-semibold text-gray-900 mb-2 capitalize">
                           {plan.planType} Plan
                         </h4>
                         
                         <div className="space-y-2">
                           <div className="text-center">
-                            <span className="text-3xl font-bold text-green-400">₹{plan.amount.toLocaleString()}</span>
-                            <p className="text-sm text-gray-400 mt-1">{plan.duration} month{plan.duration > 1 ? 's' : ''}</p>
+                            <span className="text-3xl font-bold text-green-600">₹{plan.amount.toLocaleString()}</span>
+                            <p className="text-sm text-gray-600 mt-1">{plan.duration} month{plan.duration > 1 ? 's' : ''}</p>
                           </div>
                           
-                          <div className="pt-3 border-t border-gray-700 space-y-1 text-gray-300">
-                            <p className="text-sm">Total Users: <span className="font-semibold">{stats.totalUsers}</span></p>
-                            <p className="text-sm">Active: <span className="font-semibold text-green-400">{stats.activeUsers}</span></p>
-                            <p className="text-sm">Revenue: <span className="font-semibold text-green-400">₹{stats.totalRevenue.toLocaleString()}</span></p>
+                          <div className="pt-3 border-t border-gray-200 space-y-1 text-gray-600">
+                            <p className="text-sm">Total Users: <span className="font-semibold text-gray-800">{stats.totalUsers}</span></p>
+                            <p className="text-sm">Active: <span className="font-semibold text-green-600">{stats.activeUsers}</span></p>
+                            <p className="text-sm">Revenue: <span className="font-semibold text-green-600">₹{stats.totalRevenue.toLocaleString()}</span></p>
                           </div>
                           
                           {plan.features?.length > 0 && (
-                            <div className="mt-3 text-xs text-gray-400 text-left">
+                            <div className="mt-3 text-xs text-gray-600 text-left">
                               {plan.features.slice(0, 2).map((f, i) => (
                                 <div key={i} className="truncate">• {f}</div>
                               ))}
                               {plan.features.length > 2 && (
-                                <div className="text-blue-400">+{plan.features.length - 2} more features</div>
+                                <div className="text-blue-600">+{plan.features.length - 2} more features</div>
                               )}
                             </div>
                           )}
@@ -272,8 +272,8 @@ const PlansPage = () => {
             
             {plans.length === 0 && !loading && (
               <div className="text-center py-20">
-                <CreditCardOutlined className="text-8xl text-gray-600 mb-4" />
-                <p className="text-gray-400 text-xl">No plans available</p>
+                <CreditCardOutlined className="text-8xl text-gray-300 mb-4" />
+                <p className="text-gray-500 text-xl">No plans available</p>
                 <button
                   onClick={() => setShowAddPlanModal(true)}
                   className="mt-6 flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors mx-auto"

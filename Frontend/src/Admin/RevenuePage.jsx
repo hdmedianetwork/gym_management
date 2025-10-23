@@ -119,10 +119,10 @@ const RevenuePage = () => {
         const date = dayjs(record.createdAt || record.paymentCompletedAt);
         return (
           <div>
-            <div className="font-medium text-gray-200">
+            <div className="font-medium text-gray-900">
               {date.format('DD MMM YYYY')}
             </div>
-            <div className="text-sm text-gray-400">
+            <div className="text-sm text-gray-600">
               {date.format('hh:mm A')}
             </div>
           </div>
@@ -135,17 +135,17 @@ const RevenuePage = () => {
       width: 250,
       render: (_, record) => (
         <div>
-          <div className="font-medium text-gray-200">
+          <div className="font-medium text-gray-900">
             {record.customerDetails?.customer_name || 
              record.customerDetails?.customerName || 
              'N/A'}
           </div>
-          <div className="text-sm text-gray-400">
+          <div className="text-sm text-gray-600">
             {record.customerDetails?.customer_email || 
              record.customerDetails?.customerEmail || 
              'N/A'}
           </div>
-          <div className="text-sm text-gray-400">
+          <div className="text-sm text-gray-600">
             {record.customerDetails?.customer_phone || 
              record.customerDetails?.customerPhone || 
              'N/A'}
@@ -159,10 +159,10 @@ const RevenuePage = () => {
       width: 120,
       render: (_, record) => (
         <div className="text-right">
-          <div className="font-bold text-lg text-green-400">
+          <div className="font-bold text-lg text-green-600">
             {formatCurrency(record.orderAmount || 0)}
           </div>
-          <div className="text-xs text-gray-400">
+          <div className="text-xs text-gray-600">
             {record.orderCurrency || 'INR'}
           </div>
         </div>
@@ -174,7 +174,7 @@ const RevenuePage = () => {
       key: 'orderId',
       width: 140,
       render: (orderId) => (
-        <div className="text-xs text-gray-300 font-mono bg-gray-700 px-2 py-1 rounded">
+        <div className="text-xs text-gray-700 font-mono bg-gray-100 px-2 py-1 rounded">
           {orderId || 'N/A'}
         </div>
       ),
@@ -185,7 +185,7 @@ const RevenuePage = () => {
       width: 100,
       render: (_, record) => (
         <div className="text-center">
-          <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-green-500/20 text-green-400">
+          <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
             {record.orderStatus || record.paymentStatus || 'Paid'}
           </span>
         </div>
@@ -218,69 +218,69 @@ const RevenuePage = () => {
   }
 
   return (
-    <div className="min-h-screen p-6">
+    <div className="min-h-screen p-6 bg-white text-gray-900">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
-          <MoneyCollectOutlined className="text-3xl text-green-500" />
-          <h1 className="text-3xl font-bold text-white">Revenue Dashboard</h1>
+          <MoneyCollectOutlined className="text-3xl text-green-600" />
+          <h1 className="text-3xl font-bold text-gray-900">Revenue Dashboard</h1>
         </div>
 
         <div className="space-y-6">
           {/* Revenue Statistics Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="text-center border-2 border-gray-700 rounded-xl bg-gray-800 shadow-xl">
+            <Card className="text-center border border-gray-200 rounded-xl bg-white shadow">
               <Statistic
-                title={<span className="text-gray-400">Total Revenue</span>}
+                title={<span className="text-gray-600">Total Revenue</span>}
                 value={totalRevenue}
                 formatter={(value) => formatCurrency(value)}
-                prefix={<DollarOutlined className="text-green-400" />}
-                valueStyle={{ color: '#4ade80', fontSize: '1.75rem', fontWeight: 'bold' }}
+                prefix={<DollarOutlined className="text-green-600" />}
+                valueStyle={{ color: '#16a34a', fontSize: '1.75rem', fontWeight: 'bold' }}
               />
-              <div className="text-sm text-gray-400 mt-2">
+              <div className="text-sm text-gray-600 mt-2">
                 {filteredPayments.length} transactions
               </div>
             </Card>
 
-            <Card className="text-center border-2 border-gray-700 rounded-xl bg-gray-800 shadow-xl">
+            <Card className="text-center border border-gray-200 rounded-xl bg-white shadow">
               <Statistic
-                title={<span className="text-gray-400">This Month</span>}
+                title={<span className="text-gray-600">This Month</span>}
                 value={monthlyRevenue}
                 formatter={(value) => formatCurrency(value)}
-                prefix={<RiseOutlined className="text-blue-400" />}
-                valueStyle={{ color: '#60a5fa', fontSize: '1.75rem', fontWeight: 'bold' }}
+                prefix={<RiseOutlined className="text-blue-600" />}
+                valueStyle={{ color: '#2563eb', fontSize: '1.75rem', fontWeight: 'bold' }}
               />
-              <div className="text-sm text-gray-400 mt-2">
+              <div className="text-sm text-gray-600 mt-2">
                 {getRevenueGrowth() >= 0 ? '+' : ''}{getRevenueGrowth()}% from last month
               </div>
             </Card>
 
-            <Card className="text-center border-2 border-gray-700 rounded-xl bg-gray-800 shadow-xl">
+            <Card className="text-center border border-gray-200 rounded-xl bg-white shadow">
               <Statistic
-                title={<span className="text-gray-400">Today</span>}
+                title={<span className="text-gray-600">Today</span>}
                 value={todayRevenue}
                 formatter={(value) => formatCurrency(value)}
-                prefix={<CalendarOutlined className="text-orange-400" />}
-                valueStyle={{ color: '#fb923c', fontSize: '1.75rem', fontWeight: 'bold' }}
+                prefix={<CalendarOutlined className="text-orange-600" />}
+                valueStyle={{ color: '#ea580c', fontSize: '1.75rem', fontWeight: 'bold' }}
               />
             </Card>
 
-            <Card className="text-center border-2 border-gray-700 rounded-xl bg-gray-800 shadow-xl">
+            <Card className="text-center border border-gray-200 rounded-xl bg-white shadow">
               <Statistic
-                title={<span className="text-gray-400">Average Transaction</span>}
+                title={<span className="text-gray-600">Average Transaction</span>}
                 value={filteredPayments.length > 0 ? totalRevenue / filteredPayments.length : 0}
                 formatter={(value) => formatCurrency(value)}
-                prefix={<UserOutlined className="text-purple-400" />}
-                valueStyle={{ color: '#c084fc', fontSize: '1.75rem', fontWeight: 'bold' }}
+                prefix={<UserOutlined className="text-purple-600" />}
+                valueStyle={{ color: '#7c3aed', fontSize: '1.75rem', fontWeight: 'bold' }}
               />
             </Card>
           </div>
 
           {/* Filters */}
-          <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
+          <div className="bg-white p-4 rounded-lg border border-gray-200">
             <div className="flex flex-wrap items-center gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Date Range
                 </label>
                 <RangePicker
@@ -293,12 +293,12 @@ const RevenuePage = () => {
               
               {(dateRange.length > 0 || filterType !== 'all') && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     &nbsp;
                   </label>
                   <button
                     onClick={clearFilters}
-                    className="px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700 border border-gray-600 rounded-md transition-colors"
+                    className="px-4 py-2 text-sm text-gray-700 hover:text-black hover:bg-gray-100 border border-gray-300 rounded-md transition-colors"
                   >
                     Clear Filters
                   </button>
@@ -308,12 +308,12 @@ const RevenuePage = () => {
           </div>
 
           {/* Payment History Table */}
-          <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
-            <div className="px-4 py-3 border-b border-gray-700 bg-gray-900">
-              <h3 className="text-lg font-semibold text-white">
+          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
+              <h3 className="text-lg font-semibold text-gray-900">
                 Payment History
                 {filteredPayments.length !== payments.length && (
-                  <span className="ml-2 text-sm font-normal text-gray-400">
+                  <span className="ml-2 text-sm font-normal text-gray-600">
                     (Filtered: {filteredPayments.length} of {payments.length})
                   </span>
                 )}
@@ -333,7 +333,7 @@ const RevenuePage = () => {
                 pageSizeOptions: ['10', '20', '50'],
               }}
               scroll={{ x: 'max-content', y: 500 }}
-              className="[&_.ant-table]:bg-gray-800 [&_.ant-table-thead>tr>th]:bg-gray-700 [&_.ant-table-thead>tr>th]:text-gray-200 [&_.ant-table-thead>tr>th]:font-semibold [&_.ant-table-tbody>tr>td]:text-gray-300 [&_.ant-table-tbody>tr]:bg-gray-800 [&_.ant-table-tbody>tr:hover>td]:bg-gray-700"
+              className="[&_.ant-table]:bg-white [&_.ant-table-thead>tr>th]:bg-gray-50 [&_.ant-table-thead>tr>th]:text-gray-700 [&_.ant-table-thead>tr>th]:font-semibold [&_.ant-table-tbody>tr>td]:text-gray-700 [&_.ant-table-tbody>tr:hover>td]:bg-gray-50"
               size="small"
             />
           </div>
@@ -341,9 +341,9 @@ const RevenuePage = () => {
           {/* Empty State */}
           {filteredPayments.length === 0 && !loading && (
             <div className="text-center py-20">
-              <MoneyCollectOutlined className="text-8xl text-gray-600 mb-4" />
-              <p className="text-gray-400 text-xl">No payment data available</p>
-              <p className="text-gray-500 text-sm mt-2">
+              <MoneyCollectOutlined className="text-8xl text-gray-300 mb-4" />
+              <p className="text-gray-500 text-xl">No payment data available</p>
+              <p className="text-gray-600 text-sm mt-2">
                 {dateRange.length > 0 || filterType !== 'all' 
                   ? 'Try adjusting your filters to see more results'
                   : 'Payments will appear here once transactions are made'

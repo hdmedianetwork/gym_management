@@ -131,16 +131,16 @@ const CouponsPage = () => {
   return (
     <>
       {modalContextHolder}
-      <div className="min-h-screen p-6">
+      <div className="min-h-screen p-6 bg-white text-gray-900">
         <div className="max-w-7xl mx-auto">
           <div className="space-y-6">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <TagOutlined className="text-3xl text-orange-500" />
+                <TagOutlined className="text-3xl text-orange-600" />
                 <div>
-                  <h1 className="text-3xl font-bold text-white">Coupon Management</h1>
+                  <h1 className="text-3xl font-bold text-gray-900">Coupon Management</h1>
                   {coupons.length > 0 && (
-                    <p className="text-sm text-gray-400 mt-1">
+                    <p className="text-sm text-gray-600 mt-1">
                       Total: {coupons.length} coupons available
                     </p>
                   )}
@@ -159,7 +159,7 @@ const CouponsPage = () => {
               {coupons.map((coupon, index) => (
                 <Card
                   key={coupon._id || index}
-                  className="cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-2 border-gray-700 rounded-xl bg-gray-800 relative group"
+                  className="cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border border-gray-200 rounded-xl bg-white relative group"
                   onClick={() => openEditModal(coupon)}
                   styles={{ body: { padding: '24px' } }}
                 >
@@ -172,7 +172,7 @@ const CouponsPage = () => {
                         e.stopPropagation();
                         openEditModal(coupon);
                       }}
-                      className="text-blue-400 hover:bg-blue-500/20 hover:text-blue-300"
+                      className="text-blue-600 hover:bg-blue-50 hover:text-blue-700"
                     />
                     <Button
                       type="text"
@@ -182,26 +182,26 @@ const CouponsPage = () => {
                         e.stopPropagation();
                         handleDeleteCoupon(coupon._id);
                       }}
-                      className="text-red-400 hover:bg-red-500/20"
+                      className="text-red-600 hover:bg-red-50"
                     />
                   </div>
 
                   <div className="text-center space-y-4">
-                    <div className="text-4xl p-4 bg-orange-500/20 text-orange-400 rounded-full mx-auto w-fit">
+                    <div className="text-4xl p-4 bg-orange-50 text-orange-600 rounded-full mx-auto w-fit">
                       <TagOutlined />
                     </div>
                     
                     <div>
-                      <h4 className="text-xl font-semibold text-white mb-3 font-mono tracking-wider">
+                      <h4 className="text-xl font-semibold text-gray-900 mb-3 font-mono tracking-wider">
                         {coupon.code}
                       </h4>
                       
                       <div className="space-y-2">
-                        <div className="text-3xl font-bold text-green-400">
+                        <div className="text-3xl font-bold text-green-600">
                           {formatDiscount(coupon)}
                         </div>
                         
-                        <div className="text-gray-400 text-xs">
+                        <div className="text-gray-600 text-xs">
                           {coupon.discountType === 'percentage' ? 'Percentage Discount' : 'Fixed Amount Discount'}
                         </div>
                       </div>
@@ -213,8 +213,8 @@ const CouponsPage = () => {
             
             {coupons.length === 0 && !loading && (
               <div className="text-center py-20">
-                <TagOutlined className="text-8xl text-gray-600 mb-4" />
-                <p className="text-gray-400 text-xl">No coupons available</p>
+                <TagOutlined className="text-8xl text-gray-300 mb-4" />
+                <p className="text-gray-500 text-xl">No coupons available</p>
                 <button
                   onClick={() => setShowAddCouponModal(true)}
                   className="mt-6 flex items-center gap-2 px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors mx-auto"

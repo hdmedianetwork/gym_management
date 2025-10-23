@@ -217,20 +217,20 @@ const Navbar = () => {
     <>
       {/* Fixed Sidebar - Always visible on desktop, collapsible on mobile */}
       <motion.aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-gray-900 text-white shadow-2xl transform transition-transform duration-300 ease-in-out ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white text-gray-900 shadow-lg transform transition-transform duration-300 ease-in-out ${
           isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
       >
         <div className="h-full flex flex-col">
           {/* Logo Section */}
-          <div className="flex items-center justify-between h-16 px-6 border-b border-gray-800">
+          <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
             <Link to="/" className="flex items-center space-x-2" onClick={closeMenu}>
               <FaDumbbell className="h-8 w-8 text-blue-500" />
               <span className="text-xl font-bold">Gym Pro</span>
             </Link>
             <button
               onClick={closeMenu}
-              className="lg:hidden p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-800 focus:outline-none"
+              className="lg:hidden p-2 rounded-md text-gray-500 hover:text-black hover:bg-gray-100 focus:outline-none"
               aria-label="Close sidebar"
             >
               <FiX className="h-6 w-6" />
@@ -245,8 +245,8 @@ const Navbar = () => {
                 onClick={() => handleLinkClick(link)}
                 className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
                   link.path && isActive(link.path)
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                    ? 'bg-blue-100 text-blue-700'
+                    : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
                 }`}
               >
                 <span className="mr-3">{link.icon}</span>
@@ -256,25 +256,25 @@ const Navbar = () => {
           </nav>
 
           {/* User Profile Section */}
-          <div className="p-4 border-t border-gray-800">
+          <div className="p-4 border-t border-gray-200">
             {user || isAdmin ? (
               <div className="space-y-2">
-                <div className="flex items-center px-4 py-3 rounded-lg bg-gray-800">
+                <div className="flex items-center px-4 py-3 rounded-lg bg-gray-100">
                   <div className="h-10 w-10 rounded-full bg-blue-600 flex items-center justify-center">
                     <FiUser className="h-5 w-5 text-white" />
                   </div>
                   <div className="ml-3 flex-1">
-                    <p className="text-sm font-medium text-white">
+                    <p className="text-sm font-medium text-gray-900">
                       {isAdmin ? 'Admin' : user?.name || 'User'}
                     </p>
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-gray-600">
                       {user?.email || 'admin@gym.com'}
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={handleLogout}
-                  className="flex items-center w-full px-4 py-3 text-sm font-medium text-red-400 hover:bg-red-900/20 hover:text-red-300 rounded-lg transition-colors"
+                  className="flex items-center w-full px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 hover:text-red-700 rounded-lg transition-colors"
                 >
                   <FiLogOut className="mr-3 h-5 w-5" />
                   Sign Out
@@ -292,7 +292,7 @@ const Navbar = () => {
                 <Link
                   to="/signup"
                   onClick={closeMenu}
-                  className="block w-full px-4 py-3 text-sm text-center font-medium text-gray-300 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors"
+                  className="block w-full px-4 py-3 text-sm text-center font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                 >
                   Sign Up
                 </Link>
@@ -316,18 +316,18 @@ const Navbar = () => {
       </AnimatePresence>
 
       {/* Top Bar - Only visible on mobile */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-30 bg-gray-900/95 backdrop-blur-sm border-b border-gray-800">
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-sm border-b border-gray-200">
         <div className="flex items-center justify-between h-16 px-4">
           <button
             onClick={toggleMenu}
-            className="p-2 rounded-md text-gray-300 hover:text-white hover:bg-gray-800 focus:outline-none"
+            className="p-2 rounded-md text-gray-600 hover:text-black hover:bg-gray-100 focus:outline-none"
             aria-label="Open menu"
           >
             <FiMenu className="h-6 w-6" />
           </button>
           <Link to="/" className="flex items-center space-x-2">
             <FaDumbbell className="h-6 w-6 text-blue-500" />
-            <span className="text-lg font-bold text-white">Gym Pro</span>
+            <span className="text-lg font-bold text-gray-900">Gym Pro</span>
           </Link>
           <div className="w-10"></div>
         </div>

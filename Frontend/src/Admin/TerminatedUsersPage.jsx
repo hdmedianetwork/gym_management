@@ -32,13 +32,13 @@ const TerminatedUsersPage = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-white text-xl">Loading...</div>
+        <div className="text-gray-900 text-xl">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen p-6">
+    <div className="min-h-screen p-6 bg-white text-gray-900">
       <div className="max-w-7xl mx-auto">
         <TerminatedUsers users={terminatedUsers} onReinstate={fetchTerminatedUsers} />
       </div>
