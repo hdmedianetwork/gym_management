@@ -39,12 +39,8 @@ const Login = () => {
         }
         toast.success('Login successful!');
         
-        // Check if profile is complete
-        if (response.user.profileComplete) {
-          navigate('/home');
-        } else {
-          navigate('/complete-profile');
-        }
+        // Redirect to root path after successful login
+        navigate('/');
       }
     } catch (error) {
       toast.error(error.message || 'Login failed. Please try again.');

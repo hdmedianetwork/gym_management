@@ -43,13 +43,23 @@ const Navbar = () => {
   }, [location]);
 
   const handleLogout = () => {
+    // Clear all auth-related data
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('isAdmin');
+    
+    // Reset state
     setUser(null);
     setIsAdmin(false);
-    navigate('/');
+    
+    // Close any open menus
     setIsProfileOpen(false);
+    setIsOpen(false);
+    
+    // Redirect to login page with a small delay to ensure state is cleared
+    setTimeout(() => {
+      navigate('/login', { replace: true });
+    }, 0);
   };
 
   // Toggle menu function
