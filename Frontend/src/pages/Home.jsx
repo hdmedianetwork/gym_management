@@ -493,19 +493,10 @@ const Home = () => {
     }, 100);
   };
 
-  // Prevent all scrolling by adding a class to the HTML element
-  React.useEffect(() => {
-    // Add class to html element
-    document.documentElement.classList.add('no-scroll');
-    
-    // Cleanup function to remove the class when component unmounts
-    return () => {
-      document.documentElement.classList.remove('no-scroll');
-    };
-  }, []);
+  // Removed the no-scroll effect to allow natural page scrolling
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 text-gray-900 overflow-hidden">
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 text-gray-900">
       <Navbar />
       
       {/* Welcome Section */}
@@ -618,13 +609,34 @@ const Home = () => {
       </div>
 
       {/* Main Content */}
-      <div className="relative z-10 h-full overflow-hidden">
-        <div className="h-full overflow-y-auto">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
-            {/* Content will be added here */}
+      <div className="relative z-10 flex-grow">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+          {/* View Plans Section */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-8">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Ready to Get Started?</h2>
+              <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
+                Choose the perfect plan that fits your fitness goals and start your journey with us today.
+              </p>
+              <button 
+                onClick={() => navigate('/plan')}
+                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-all duration-200 transform hover:scale-105"
+              >
+                View All Plans
+              </button>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Footer - This will be pushed to the bottom */}
+      <footer className="bg-gradient-to-br from-gray-100 text-gray-800 py-6 mt-auto">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center text-sm text-gray-400">
+            © {new Date().getFullYear()} Gym Management System. All rights reserved.
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };
