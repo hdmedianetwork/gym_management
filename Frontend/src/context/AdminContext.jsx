@@ -3,25 +3,9 @@ import React, { createContext, useContext, useState } from 'react';
 const AdminContext = createContext();
 
 export const AdminProvider = ({ children }) => {
-  const [showBranchOverlay, setShowBranchOverlay] = useState(false);
-  const [showPlansOverlay, setShowPlansOverlay] = useState(false);
-  const [showCouponsOverlay, setShowCouponsOverlay] = useState(false);
-  const [showRevenueOverlay, setShowRevenueOverlay] = useState(false);
   const [adminData, setAdminData] = useState({
     users: []
   });
-
-  const openBranchOverlay = () => setShowBranchOverlay(true);
-  const closeBranchOverlay = () => setShowBranchOverlay(false);
-  
-  const openPlansOverlay = () => setShowPlansOverlay(true);
-  const closePlansOverlay = () => setShowPlansOverlay(false);
-
-  const openCouponsOverlay = () => setShowCouponsOverlay(true);
-  const closeCouponsOverlay = () => setShowCouponsOverlay(false);
-
-  const openRevenueOverlay = () => setShowRevenueOverlay(true);
-  const closeRevenueOverlay = () => setShowRevenueOverlay(false);
 
   const updateUsers = (users) => {
     setAdminData(prev => ({ ...prev, users }));
@@ -29,18 +13,6 @@ export const AdminProvider = ({ children }) => {
 
   return (
     <AdminContext.Provider value={{
-      showBranchOverlay,
-      openBranchOverlay,
-      closeBranchOverlay,
-      showPlansOverlay,
-      openPlansOverlay,
-      closePlansOverlay,
-      showCouponsOverlay,
-      openCouponsOverlay,
-      closeCouponsOverlay,
-      showRevenueOverlay,
-      openRevenueOverlay,
-      closeRevenueOverlay,
       adminData,
       updateUsers
     }}>
