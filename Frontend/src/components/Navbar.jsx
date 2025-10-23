@@ -122,16 +122,18 @@ const Navbar = () => {
   const userNavLinks = [
     { name: 'Home', path: '/', icon: <FiHome className="w-5 h-5" /> },
     { name: 'Contact', path: '/contact', icon: <FiMail className="w-5 h-5" /> },
-    { name: 'About', path: '/about', icon: <FiInfo className="w-5 h-5" /> },
+    { name: 'Plan', path: '/plan', icon: <FiDollarSign className="w-5 h-5" /> },
+    { name: 'Settings', path: '/settings', icon: <FiSettings className="w-5 h-5" /> },
   ];
 
   // Navigation links for admin users
   const adminNavLinks = [
     { 
       name: 'Dashboard', 
-      icon: <FiSettings className="w-5 h-5" />,
+      icon: <FiHome className="w-5 h-5" />,
       path: '/admin'
     },
+    
     {
       name: 'Terminated Users',
       icon: <FiX className="w-5 h-5" />,
@@ -156,6 +158,11 @@ const Navbar = () => {
       name: 'Coupons', 
       icon: <FiCalendar className="w-5 h-5" />,
       path: '/admin/coupons'
+    },
+    { 
+      name: 'Settings', 
+      icon: <FiSettings className="w-5 h-5" />,
+      path: '/admin/settings'
     },
   ];
 
@@ -282,7 +289,7 @@ const Navbar = () => {
                       {user?.name || 'User'}
                     </p>
                     <p className="text-xs text-gray-500 truncate">
-                      {user?.email || 'user@example.com'}
+                      {isAdmin ? (adminContext?.adminEmail || 'Admin') : (user?.email || 'user@example.com')}
                     </p>
                   </div>
                 </div>

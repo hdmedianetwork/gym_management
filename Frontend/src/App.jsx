@@ -14,6 +14,7 @@ import CompleteProfile from './auth/CompleteProfile';
 import ForgotPassword from './auth/ForgotPassword';
 import PaymentStatus from './pages/PaymentStatus';
 import Profile from './pages/Profile';
+import Plan from './pages/Plan';
 import TerminatedUsersPage from './Admin/TerminatedUsersPage';
 import BranchesPage from './Admin/BranchesPage';
 import PlansPage from './Admin/PlansPage';
@@ -46,7 +47,7 @@ function AppContent() {
     <div className="min-h-screen bg-white text-gray-900">
       <ToastContainer position="top-right" autoClose={5000} hideProgressBar={false} newestOnTop closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
       {showNavbar && <Navbar />}
-      <div className={`min-h-screen ${showNavbar ? 'lg:ml-64 pt-16 lg:pt-0' : ''}`}>
+      <div className={`min-h-screen ${showNavbar ? 'lg:ml-72 pt-16 lg:pt-0' : ''}`}>
         <Routes>
           {/* Protected Home Route */}
           <Route path="/" element={
@@ -84,6 +85,7 @@ function AppContent() {
           <Route path="/admin/revenue" element={<ProtectedRoute requireAuth={true}><RevenuePage /></ProtectedRoute>} />
           <Route path="/admin/coupons" element={<ProtectedRoute requireAuth={true}><CouponsPage /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute requireAuth={true}><ProfileCompletionGuard><Profile /></ProfileCompletionGuard></ProtectedRoute>} />
+          <Route path="/plan" element={<ProtectedRoute requireAuth={true}><Plan /></ProtectedRoute>} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
