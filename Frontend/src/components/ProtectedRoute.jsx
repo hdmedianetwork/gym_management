@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 
 const ProtectedRoute = ({ children, requireAuth = true, redirectTo = '/' }) => {
   const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isUserAuthenticated, setIsUserAuthenticated] = useState(false);
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
@@ -15,32 +15,35 @@ const ProtectedRoute = ({ children, requireAuth = true, redirectTo = '/' }) => {
         const isAdminFlag = localStorage.getItem('isAdmin') === 'true';
         
         if (!token) {
-          setIsAuthenticated(false);
+          setIsUserAuthenticated(false);
+          setIsAdminAuthenticated(false);
           setIsLoading(false);
           return;
         }
         
-        // For admin routes, we don't need to fetch user data if isAdmin flag is set
-        if (location.pathname.startsWith('/admin') && isAdminFlag) {
-          setIsAuthenticated(true);
-          setIsAdmin(true);
+        // Check admin authentication first
+        if (isAdminFlag) {
+          setIsAdminAuthenticated(true);
+          setIsUserAuthenticated(false);
           setIsLoading(false);
           return;
         }
         
-        // For non-admin routes, fetch user data
+        // If not admin, check regular user authentication
         const user = await getCurrentUser();
         if (user) {
-          setIsAuthenticated(true);
-          setIsAdmin(user.role === 'admin');
+          setIsUserAuthenticated(true);
+          setIsAdminAuthenticated(false);
         } else {
-          setIsAuthenticated(false);
+          setIsUserAuthenticated(false);
+          setIsAdminAuthenticated(false);
           localStorage.removeItem('token');
           localStorage.removeItem('isAdmin');
         }
       } catch (error) {
         console.error('Auth check error:', error);
-        setIsAuthenticated(false);
+        setIsUserAuthenticated(false);
+        setIsAdminAuthenticated(false);
         localStorage.removeItem('token');
         localStorage.removeItem('isAdmin');
       } finally {
@@ -49,35 +52,44 @@ const ProtectedRoute = ({ children, requireAuth = true, redirectTo = '/' }) => {
     };
     
     checkAuth();
-  }, [location.pathname]); // Re-run when route changes
+  }, [location.pathname]);
 
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
 
-  // For routes that require authentication
+  const isAdminRoute = location.pathname.startsWith('/admin');
+  const isAuthRoute = ['/login', '/adminlogin', '/signup', '/forgot-password', '/verify-otp'].includes(location.pathname);
+
+  // Handle authentication required routes
   if (requireAuth) {
-    // Check if it's an admin route
-    const isAdminRoute = location.pathname.startsWith('/admin');
-    
-    // If it's an admin route, check for admin authentication
+    // For admin routes
     if (isAdminRoute) {
-      const isAdminAuthenticated = localStorage.getItem('isAdmin') === 'true';
       if (!isAdminAuthenticated) {
         return <Navigate to="/adminlogin" state={{ from: location.pathname }} replace />;
       }
-      // If admin is authenticated, allow access to admin routes
       return children;
-    } 
-    // For non-admin routes, check regular authentication
-    else if (!isAuthenticated) {
+    }
+    // For user routes
+    else if (!isUserAuthenticated) {
       return <Navigate to="/login" state={{ from: location.pathname || '/' }} replace />;
     }
   }
 
-  // If trying to access auth routes while already authenticated
-  if (!requireAuth && isAuthenticated) {
-    return <Navigate to={redirectTo} replace />;
+  // Handle auth routes (login, signup, adminlogin, etc.)
+  if (isAuthRoute) {
+    // If trying to access login while already authenticated as user or admin
+    if (location.pathname === '/login' && (isUserAuthenticated || isAdminAuthenticated)) {
+      return <Navigate to={isAdminAuthenticated ? "/admin" : redirectTo} replace />;
+    }
+    // If trying to access signup while already authenticated as user or admin
+    if (location.pathname === '/signup' && (isUserAuthenticated || isAdminAuthenticated)) {
+      return <Navigate to={isAdminAuthenticated ? "/admin" : redirectTo} replace />;
+    }
+    // If trying to access adminlogin while already authenticated as admin or user
+    if (location.pathname === '/adminlogin' && (isAdminAuthenticated || isUserAuthenticated)) {
+      return <Navigate to={isAdminAuthenticated ? "/admin" : redirectTo} replace />;
+    }
   }
 
   return children;
