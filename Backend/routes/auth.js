@@ -737,4 +737,294 @@ router.get("/profile-status/:userId", async (req, res) => {
   }
 });
 
+// Admin routes
+router.route('/admin')
+  // Get list of all admins
+  .get(async (req, res) => {
+    try {
+      const admins = await Admin.find({}, 'email isVerified createdAt').sort({ createdAt: -1 });
+      
+      if (!admins || admins.length === 0) {
+        return res.status(200).json({
+          success: true,
+          admins: []
+        });
+      }
+      
+      const formattedAdmins = admins.map(admin => ({
+        email: admin.email,
+        isVerified: admin.isVerified,
+        _id: admin._id,
+        createdAt: admin.createdAt
+      }));
+      
+      res.status(200).json({
+        success: true,
+        admins: formattedAdmins
+      });
+      
+    } catch (error) {
+      console.error('Error fetching admin list:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch admin list',
+        error: error.message
+      });
+    }
+  })
+  // Grant admin access to a new user
+  .post(async (req, res) => {
+    console.log('=== POST /api/auth/admin called ===');
+    console.log('Request body:', req.body);
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Email is required' 
+        });
+      }
+
+      // Check if admin already exists
+      let admin = await Admin.findOne({ email: email.toLowerCase() });
+      
+      if (admin) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Admin with this email already exists' 
+        });
+      }
+
+      // Create new admin
+      admin = new Admin({
+        email: email.toLowerCase(),
+        isVerified: false
+      });
+
+      await admin.save();
+      
+      // TODO: Send verification email to the new admin
+      
+      res.status(201).json({
+        success: true,
+        message: 'Admin access granted successfully',
+        admin: {
+          email: admin.email,
+          isVerified: admin.isVerified,
+          _id: admin._id,
+          createdAt: admin.createdAt
+        }
+      });
+      
+    } catch (error) {
+      console.error('Error granting admin access:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Server error while granting admin access',
+        error: error.message 
+      });
+    }
+  });
+
+// Debug route to test if routes are working
+router.get("/admin/test", (req, res) => {
+  res.json({ success: true, message: "Admin routes are working!" });
+});
+
+// Alternative POST route for adding admin (standalone version)
+router.post("/admin/add", async (req, res) => {
+  console.log('=== POST /api/auth/admin/add called ===');
+  console.log('Request body:', req.body);
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Email is required' 
+      });
+    }
+
+    // Check if admin already exists
+    let admin = await Admin.findOne({ email: email.toLowerCase() });
+    
+    if (admin) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Admin with this email already exists' 
+      });
+    }
+
+    // Create new admin
+    admin = new Admin({
+      email: email.toLowerCase(),
+      isVerified: false
+    });
+
+    await admin.save();
+    
+    res.status(201).json({
+      success: true,
+      message: 'Admin access granted successfully',
+      admin: {
+        email: admin.email,
+        isVerified: admin.isVerified,
+        _id: admin._id,
+        createdAt: admin.createdAt
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error granting admin access:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error while granting admin access',
+      error: error.message 
+    });
+  }
+});
+
+// Update admin email
+router.put("/admin/:id", async (req, res) => {
+  console.log('=== PUT /api/auth/admin/:id called ===');
+  console.log('Admin ID:', req.params.id);
+  console.log('Request body:', req.body);
+  try {
+    const { id } = req.params;
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Email is required' 
+      });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid email format' 
+      });
+    }
+
+    // Check if another admin already uses this email
+    const existingAdmin = await Admin.findOne({ 
+      email: email.toLowerCase(),
+      _id: { $ne: id } // Exclude current admin
+    });
+    
+    if (existingAdmin) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Another admin with this email already exists' 
+      });
+    }
+
+    // Update admin email
+    const admin = await Admin.findByIdAndUpdate(
+      id,
+      { email: email.toLowerCase() },
+      { new: true }
+    );
+
+    if (!admin) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Admin not found' 
+      });
+    }
+    
+    res.status(200).json({
+      success: true,
+      message: 'Admin email updated successfully',
+      admin: {
+        email: admin.email,
+        isVerified: admin.isVerified,
+        _id: admin._id,
+        createdAt: admin.createdAt
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error updating admin:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error while updating admin',
+      error: error.message 
+    });
+  }
+});
+
+// Delete admin
+router.delete("/admin/:id", async (req, res) => {
+  console.log('=== DELETE /api/auth/admin/:id called ===');
+  console.log('Admin ID:', req.params.id);
+  try {
+    const { id } = req.params;
+
+    // Find and delete admin
+    const admin = await Admin.findByIdAndDelete(id);
+
+    if (!admin) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Admin not found' 
+      });
+    }
+    
+    res.status(200).json({
+      success: true,
+      message: 'Admin removed successfully',
+      admin: {
+        email: admin.email,
+        _id: admin._id
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error deleting admin:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error while deleting admin',
+      error: error.message 
+    });
+  }
+});
+
+// Get list of all admins (legacy route - keeping for backward compatibility)
+router.get("/admin/list", async (req, res) => {
+  try {
+    const admins = await Admin.find({}, 'email isVerified createdAt').sort({ createdAt: -1 });
+    
+    if (!admins || admins.length === 0) {
+      return res.status(200).json({
+        success: true,
+        admins: []
+      });
+    }
+    
+    const formattedAdmins = admins.map(admin => ({
+      _id: admin._id,
+      email: admin.email,
+      isVerified: admin.isVerified
+    }));
+    
+    // console.log('Sending response with admins:', formattedAdmins);
+    res.status(200).json({
+      success: true,
+      admins: formattedAdmins
+    });
+  } catch (err) {
+    console.error('Error fetching admin list:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch admin list',
+      error: err.message
+    });
+  }
+});
+
 export default router;
