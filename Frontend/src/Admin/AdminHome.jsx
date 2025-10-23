@@ -7,10 +7,6 @@ import { UserOutlined, ClockCircleOutlined, StopOutlined, CloseOutlined, IdcardO
 import TerminatedUsers from './TerminatedUsers';
 import AddUserModal from './AddUserModal';
 import EditUserModal from './EditUserModal';
-import BranchOverlay from './BranchOverlay';
-import PlansOverlay from './PlansOverlay';
-import CouponOverlay from './CouponOverlay';
-import RevenueOverlay from './RevenueOverlay';
 import { useAdmin } from '../context/AdminContext';
 
 // Helper to categorize users
@@ -47,7 +43,7 @@ const categorizeUsers = (users) => {
 const Home = () => {
   const location = useLocation();
   const adminContext = useAdmin();
-  const { showBranchOverlay, closeBranchOverlay, showPlansOverlay, closePlansOverlay, showCouponsOverlay, closeCouponsOverlay, showRevenueOverlay, closeRevenueOverlay, updateUsers, openBranchOverlay, openPlansOverlay, openRevenueOverlay } = adminContext;
+  const { updateUsers } = adminContext;
   const [activeTab, setActiveTab] = useState('active');
   const [usersData, setUsersData] = useState({ active: [], expiring: [], suspended: [], terminated: [] });
   const [tableData, setTableData] = useState([]);
@@ -1422,32 +1418,6 @@ const Home = () => {
         />
       </Modal>
 
-      {/* Branch Overview Modal */}
-      <BranchOverlay
-        visible={showBranchOverlay}
-        onClose={closeBranchOverlay}
-        users={[...usersData.active, ...usersData.expiring, ...usersData.suspended, ...usersData.terminated]}
-      />
-
-      {/* Plans Management Modal */}
-      <PlansOverlay
-        visible={showPlansOverlay}
-        onClose={closePlansOverlay}
-        users={[...usersData.active, ...usersData.expiring, ...usersData.suspended, ...usersData.terminated]}
-      />
-
-      {/* Coupon Management Modal */}
-      <CouponOverlay
-        visible={showCouponsOverlay}
-        onClose={closeCouponsOverlay}
-      />
-
-      {/* Revenue Dashboard Modal */}
-      <RevenueOverlay
-        visible={showRevenueOverlay}
-        onClose={closeRevenueOverlay}
-        users={[...usersData.active, ...usersData.expiring, ...usersData.suspended, ...usersData.terminated]}
-      />
     </div>
   );
 };

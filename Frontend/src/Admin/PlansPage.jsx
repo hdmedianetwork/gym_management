@@ -1,121 +1,51 @@
-import React, { useState, useEffect } from 'react';
-import { Card, Button, Form, Input, InputNumber, message, Modal } from 'antd';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Card, Button, Form, Input, InputNumber, message, Modal, Spin } from 'antd';
 import { CreditCardOutlined, PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { getAllPlans, createPlan, updatePlan, deletePlan, getAllUsers, getSuccessfulPayments } from '../utils/api';
+import { getAllPlans, createPlan, updatePlan, deletePlan } from '../utils/api';
 
 const PlansPage = () => {
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [users, setUsers] = useState([]);
   const [showAddPlanModal, setShowAddPlanModal] = useState(false);
   const [showEditPlanModal, setShowEditPlanModal] = useState(false);
   const [editingPlan, setEditingPlan] = useState(null);
   const [form] = Form.useForm();
   const [editForm] = Form.useForm();
-  const [modal, modalContextHolder] = Modal.useModal();
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchPlans = useCallback(async () => {
     try {
       setLoading(true);
-      const [plansRes, usersRes, paymentsRes] = await Promise.all([
-        getAllPlans(),
-        getAllUsers(),
-        getSuccessfulPayments()
-      ]);
-      
+      const plansRes = await getAllPlans();
       setPlans(plansRes || []);
-      
-      let allUsers = usersRes.users || [];
-      let payments = [];
-      
-      if (paymentsRes.success && paymentsRes.transactions) {
-        payments = paymentsRes.transactions.filter(t => {
-          const s = t.orderStatus?.toLowerCase();
-          return s === 'paid' || s === 'success';
-        });
-      }
-      
-      const mergedUsers = allUsers.map(user => {
-        const userPayment = payments.find(payment => 
-          payment.customerDetails?.customer_email?.toLowerCase() === user.email?.toLowerCase()
-        );
-        
-        if (userPayment) {
-          return {
-            ...user,
-            orderAmount: userPayment.orderAmount,
-            paymentOrderId: userPayment.orderId,
-            paymentStatus: userPayment.orderStatus === 'PAID' || userPayment.orderStatus === 'SUCCESS' ? 'Paid' : user.paymentStatus,
-          };
-        }
-        
-        return user;
-      });
-      
-      setUsers(mergedUsers);
     } catch (error) {
-      console.error('Error fetching data:', error);
-      message.error('Failed to load data');
+      console.error('Error fetching plans:', error);
+      message.error('Failed to fetch plans');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const calculatePlanStats = (plan) => {
-    const planUsers = (users || []).filter(user => {
-      const userPlanType = (user.planType || '').toLowerCase();
-      const planTypeMatch = userPlanType === plan.planType.toLowerCase();
-      const amountMatch = user.orderAmount === plan.amount || user.planAmount === plan.amount;
-      return planTypeMatch || amountMatch;
-    });
-
-    const activeUsers = planUsers.filter(user => {
-      const status = (user.accountStatus || '').toLowerCase();
-      return status !== 'suspended' && status !== 'terminated';
-    });
-
-    const totalRevenue = planUsers.reduce((sum, user) => {
-      return sum + (user.orderAmount || user.planAmount || 0);
-    }, 0);
-
-    return {
-      totalUsers: planUsers.length,
-      activeUsers: activeUsers.length,
-      totalRevenue
-    };
-  };
+  useEffect(() => {
+    fetchPlans();
+  }, [fetchPlans]);
 
   const handleAddPlan = async (values) => {
     try {
       if (values.features) {
         values.features = values.features.split('\n').filter(f => f.trim());
       }
-      const created = await createPlan(values);
+      await createPlan(values);
       message.success('Plan created successfully');
-      modal.success({
-        title: 'Plan Created',
-        content: (
-          <div>
-            <p><strong>Plan:</strong> {created?.planType}</p>
-            <p><strong>Amount:</strong> ₹{created?.amount}</p>
-            <p><strong>Duration:</strong> {created?.duration} month{created?.duration > 1 ? 's' : ''}</p>
-          </div>
-        ),
-      });
       setShowAddPlanModal(false);
       form.resetFields();
-      fetchData();
+      await fetchPlans();
     } catch (error) {
       console.error('Error creating plan:', error);
-      message.error('Failed to create plan');
+      message.error(error.response?.data?.message || 'Failed to create plan');
     }
   };
 
-  const handleEditPlan = async (values) => {
+  const handleUpdatePlan = async (values) => {
     try {
       if (values.features) {
         values.features = values.features.split('\n').filter(f => f.trim());
@@ -125,15 +55,15 @@ const PlansPage = () => {
       setShowEditPlanModal(false);
       editForm.resetFields();
       setEditingPlan(null);
-      fetchData();
+      await fetchPlans();
     } catch (error) {
       console.error('Error updating plan:', error);
-      message.error('Failed to update plan');
+      message.error(error.response?.data?.message || 'Failed to update plan');
     }
   };
 
   const handleDeletePlan = (planId) => {
-    modal.confirm({
+    Modal.confirm({
       title: 'Delete Plan',
       content: 'Are you sure you want to delete this plan?',
       okText: 'Delete',
@@ -143,10 +73,10 @@ const PlansPage = () => {
         try {
           await deletePlan(planId);
           message.success('Plan deleted successfully');
-          fetchData();
+          await fetchPlans();
         } catch (error) {
           console.error('Error deleting plan:', error);
-          message.error('Failed to delete plan');
+          message.error(error.response?.data?.message || 'Failed to delete plan');
         }
       },
     });
@@ -155,272 +85,164 @@ const PlansPage = () => {
   const openEditModal = (plan) => {
     setEditingPlan(plan);
     const formValues = {
+      ...plan,
       planType: plan.planType,
-      amount: plan.amount,
-      duration: plan.duration,
-      features: plan.features && Array.isArray(plan.features) ? plan.features.join('\n') : '',
+      features: plan.features ? plan.features.join('\n') : ''
     };
     editForm.setFieldsValue(formValues);
     setShowEditPlanModal(true);
   };
 
-  if (loading) {
+  if (loading && plans.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-black text-xl">Loading...</div>
+        <Spin size="large" />
+        <span className="ml-4 text-xl">Loading plans...</span>
       </div>
     );
   }
 
   return (
-    <>
-      {modalContextHolder}
-      <div className="min-h-screen p-6 bg-white text-gray-900">
-        <div className="max-w-7xl mx-auto">
-          <div className="space-y-6">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <CreditCardOutlined className="text-3xl text-green-600" />
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900">Plans Management</h1>
-                  {plans.length > 0 && (
-                    <p className="text-sm text-gray-600 mt-1">
-                      Total: {plans.length} plans available
-                    </p>
-                  )}
-                </div>
-              </div>
-              <button
-                onClick={() => setShowAddPlanModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-              >
-                <PlusOutlined />
-                <span>Add Plan</span>
-              </button>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {plans.map((plan, index) => {
-                const stats = calculatePlanStats(plan);
-                return (
-                  <Card
-                    key={plan._id || index}
-                    className="transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border border-gray-200 rounded-xl bg-white relative group"
-                    styles={{ body: { padding: '24px' } }}
-                  >
-                    <div className="absolute top-3 right-3 flex gap-1">
-                      <Button
-                        type="text"
-                        icon={<EditOutlined />}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openEditModal(plan);
-                        }}
-                        className="text-blue-600 hover:bg-blue-50 hover:text-blue-700"
-                      />
-                      <Button
-                        type="text"
-                        danger
-                        icon={<DeleteOutlined />}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeletePlan(plan._id);
-                        }}
-                        className="text-red-600 hover:bg-red-50"
-                      />
-                    </div>
+    <div className="min-h-screen p-6 bg-white text-gray-900">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">Plans Management</h1>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => setShowAddPlanModal(true)}
+          >
+            Add Plan
+          </Button>
+        </div>
 
-                    <div className="text-center space-y-4">
-                      <div className="text-4xl p-4 bg-green-50 text-green-600 rounded-full mx-auto w-fit">
-                        <CreditCardOutlined />
-                      </div>
-                      
-                      <div>
-                        <h4 className="text-xl font-semibold text-gray-900 mb-2 capitalize">
-                          {plan.planType} Plan
-                        </h4>
-                        
-                        <div className="space-y-2">
-                          <div className="text-center">
-                            <span className="text-3xl font-bold text-green-600">₹{plan.amount.toLocaleString()}</span>
-                            <p className="text-sm text-gray-600 mt-1">{plan.duration} month{plan.duration > 1 ? 's' : ''}</p>
-                          </div>
-                          
-                          <div className="pt-3 border-t border-gray-200 space-y-1 text-gray-600">
-                            <p className="text-sm">Total Users: <span className="font-semibold text-gray-800">{stats.totalUsers}</span></p>
-                            <p className="text-sm">Active: <span className="font-semibold text-green-600">{stats.activeUsers}</span></p>
-                            <p className="text-sm">Revenue: <span className="font-semibold text-green-600">₹{stats.totalRevenue.toLocaleString()}</span></p>
-                          </div>
-                          
-                          {plan.features?.length > 0 && (
-                            <div className="mt-3 text-xs text-gray-600 text-left">
-                              {plan.features.slice(0, 2).map((f, i) => (
-                                <div key={i} className="truncate">• {f}</div>
-                              ))}
-                              {plan.features.length > 2 && (
-                                <div className="text-blue-600">+{plan.features.length - 2} more features</div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                );
-              })}
-            </div>
-            
-            {plans.length === 0 && !loading && (
-              <div className="text-center py-20">
-                <CreditCardOutlined className="text-8xl text-gray-300 mb-4" />
-                <p className="text-gray-500 text-xl">No plans available</p>
-                <button
-                  onClick={() => setShowAddPlanModal(true)}
-                  className="mt-6 flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors mx-auto"
-                >
-                  <PlusOutlined />
-                  <span>Create Your First Plan</span>
-                </button>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {plans.map(plan => (
+            <Card
+              key={plan._id}
+              title={plan.planType}
+              className="shadow-md"
+              actions={[
+                <EditOutlined key="edit" onClick={() => openEditModal(plan)} />,
+                <DeleteOutlined key="delete" onClick={() => handleDeletePlan(plan._id)} />
+              ]}
+            >
+              <div className="space-y-2">
+                <p><strong>Amount:</strong> ₹{plan.amount}</p>
+                <p><strong>Duration:</strong> {plan.duration} month{plan.duration > 1 ? 's' : ''}</p>
+                {plan.features && plan.features.length > 0 && (
+                  <div>
+                    <strong>Features:</strong>
+                    <ul className="list-disc pl-5">
+                      {plan.features.map((feature, index) => (
+                        <li key={index}>{feature}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </Card>
+          ))}
         </div>
       </div>
 
       {/* Add Plan Modal */}
       <Modal
         title="Add New Plan"
-        open={showAddPlanModal}
+        visible={showAddPlanModal}
         onCancel={() => {
           setShowAddPlanModal(false);
           form.resetFields();
         }}
-        footer={null}
-        width={500}
+        onOk={() => form.submit()}
+        okText="Create"
       >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleAddPlan}
-          className="space-y-4"
-        >
+        <Form form={form} onFinish={handleAddPlan} layout="vertical">
           <Form.Item
-            label="Plan Name"
             name="planType"
+            label="Plan Name"
             rules={[{ required: true, message: 'Please enter plan name' }]}
           >
             <Input placeholder="e.g., Basic, Premium, Pro" />
           </Form.Item>
-          
           <Form.Item
-            label="Amount (₹)"
             name="amount"
+            label="Amount (₹)"
             rules={[{ required: true, message: 'Please enter amount' }]}
           >
             <InputNumber
-              placeholder="999"
-              min={1}
-              className="w-full"
+              style={{ width: '100%' }}
+              min={0}
               formatter={value => `₹ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
               parser={value => value.replace(/₹\s?|(,*)/g, '')}
             />
           </Form.Item>
-          
           <Form.Item
-            label="Duration (Months)"
             name="duration"
+            label="Duration (months)"
             rules={[{ required: true, message: 'Please enter duration' }]}
           >
-            <InputNumber
-              placeholder="1"
-              min={1}
-              max={12}
-              className="w-full"
-            />
+            <InputNumber min={1} style={{ width: '100%' }} />
           </Form.Item>
-          
-          <div className="flex justify-end gap-3 pt-4">
-            <Button onClick={() => {
-              setShowAddPlanModal(false);
-              form.resetFields();
-            }}>
-              Cancel
-            </Button>
-            <Button type="primary" htmlType="submit">
-              Create Plan
-            </Button>
-          </div>
+          <Form.Item
+            name="features"
+            label="Features (one per line)"
+            help="Enter each feature on a new line"
+          >
+            <Input.TextArea rows={4} placeholder="Feature 1&#10;Feature 2&#10;Feature 3" />
+          </Form.Item>
         </Form>
       </Modal>
 
       {/* Edit Plan Modal */}
       <Modal
         title="Edit Plan"
-        open={showEditPlanModal}
+        visible={showEditPlanModal}
         onCancel={() => {
           setShowEditPlanModal(false);
           editForm.resetFields();
           setEditingPlan(null);
         }}
-        footer={null}
-        width={500}
+        onOk={() => editForm.submit()}
+        okText="Save Changes"
       >
-        <Form
-          form={editForm}
-          layout="vertical"
-          onFinish={handleEditPlan}
-          className="space-y-4"
-        >
+        <Form form={editForm} onFinish={handleUpdatePlan} layout="vertical">
           <Form.Item
-            label="Plan Name"
             name="planType"
+            label="Plan Name"
             rules={[{ required: true, message: 'Please enter plan name' }]}
           >
             <Input placeholder="e.g., Basic, Premium, Pro" />
           </Form.Item>
-          
           <Form.Item
-            label="Amount (₹)"
             name="amount"
+            label="Amount (₹)"
             rules={[{ required: true, message: 'Please enter amount' }]}
           >
             <InputNumber
-              placeholder="999"
-              min={1}
-              className="w-full"
+              style={{ width: '100%' }}
+              min={0}
               formatter={value => `₹ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
               parser={value => value.replace(/₹\s?|(,*)/g, '')}
             />
           </Form.Item>
-          
           <Form.Item
-            label="Duration (Months)"
             name="duration"
+            label="Duration (months)"
             rules={[{ required: true, message: 'Please enter duration' }]}
           >
-            <InputNumber
-              placeholder="1"
-              min={1}
-              max={12}
-              className="w-full"
-            />
+            <InputNumber min={1} style={{ width: '100%' }} />
           </Form.Item>
-          
-          <div className="flex justify-end gap-3 pt-4">
-            <Button onClick={() => {
-              setShowEditPlanModal(false);
-              editForm.resetFields();
-              setEditingPlan(null);
-            }}>
-              Cancel
-            </Button>
-            <Button type="primary" htmlType="submit">
-              Update Plan
-            </Button>
-          </div>
+          <Form.Item
+            name="features"
+            label="Features (one per line)"
+            help="Enter each feature on a new line"
+          >
+            <Input.TextArea rows={4} placeholder="Feature 1&#10;Feature 2&#10;Feature 3" />
+          </Form.Item>
         </Form>
       </Modal>
-    </>
+    </div>
   );
 };
 
