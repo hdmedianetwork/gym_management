@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { getAllUsers, getSuccessfulPayments, syncUsersWithPayments, updateUserStatus, getAllPlans, getProfilePhoto } from '../utils/api';
 import { Card, Table, Modal, Divider, message } from 'antd';
 import { toast } from 'react-hot-toast';
@@ -44,6 +45,7 @@ const categorizeUsers = (users) => {
 
 
 const Home = () => {
+  const location = useLocation();
   const adminContext = useAdmin();
   const { showBranchOverlay, closeBranchOverlay, showPlansOverlay, closePlansOverlay, showCouponsOverlay, closeCouponsOverlay, showRevenueOverlay, closeRevenueOverlay, updateUsers, openBranchOverlay, openPlansOverlay, openRevenueOverlay } = adminContext;
   const [activeTab, setActiveTab] = useState('active');
@@ -525,6 +527,14 @@ const Home = () => {
     fetchData();
   }, []);
 
+  // Open Terminated Users modal when query param is present
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('showTerminated') === 'true') {
+      setShowTerminatedModal(true);
+    }
+  }, [location.search]);
+
   useEffect(() => {
     if (isModalVisible && selectedUser) {
       const days = calculateDaysBetweenDates(
@@ -986,14 +996,6 @@ const Home = () => {
         </Card>
 
         <div className="relative">
-          <div className="absolute -top-8 sm:-top-20 right-0">
-            <button
-              onClick={() => setShowTerminatedModal(true)}
-              className="text-xs sm:text-sm text-red-600 hover:text-red-700 hover:underline font-medium whitespace-nowrap"
-            >
-              Terminated Users
-            </button>
-          </div>
           <Card 
             className={`cursor-pointer transition-all duration-300 rounded-lg shadow-md hover:shadow-lg hover:-translate-y-1 ${activeTab === 'suspended' ? 'ring-2 ring-red-500 ring-offset-2' : 'border border-gray-200'}`}
             onClick={() => handleCardClick('suspended')}

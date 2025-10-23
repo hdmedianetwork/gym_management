@@ -118,44 +118,34 @@ const Navbar = () => {
   // Navigation links for admin users
   const adminNavLinks = [
     { 
-      name: 'Admin', 
+      name: 'Dashboard', 
       icon: <FiSettings className="w-5 h-5" />,
-      action: () => {
-        navigate('/admin');
-        setIsOpen(false); // Close mobile menu
-      }
+      path: '/admin'
+    },
+    {
+      name: 'Terminated Users',
+      icon: <FiX className="w-5 h-5" />,
+      path: '/admin/terminated-users'
     },
     { 
       name: 'Branches', 
       icon: <FiHome className="w-5 h-5" />,
-      action: () => {
-        adminContext.openBranchOverlay();
-        setIsOpen(false); // Close mobile menu
-      }
+      path: '/admin/branches'
     },
     { 
       name: 'Plans', 
       icon: <FiDollarSign className="w-5 h-5" />,
-      action: () => {
-        adminContext.openPlansOverlay();
-        setIsOpen(false); // Close mobile menu
-      }
+      path: '/admin/plans'
     },
     { 
       name: 'Revenue', 
       icon: <FiDollarSign className="w-5 h-5" />,
-      action: () => {
-        adminContext.openRevenueOverlay();
-        setIsOpen(false); // Close mobile menu
-      }
+      path: '/admin/revenue'
     },
     { 
-      name: 'Coupon Codes', 
+      name: 'Coupons', 
       icon: <FiCalendar className="w-5 h-5" />,
-      action: () => {
-        adminContext.openCouponsOverlay();
-        setIsOpen(false); // Close mobile menu
-      }
+      path: '/admin/coupons'
     },
   ];
 
@@ -224,243 +214,125 @@ const Navbar = () => {
   };
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-40 bg-gray-900/80 backdrop-blur-sm border-b border-gray-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* Menu Button */}
-          <motion.button
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.3 }}
-            onClick={toggleMenu}
-            className="p-2 rounded-full text-gray-300 hover:text-white hover:bg-gray-800 focus:outline-none"
-            aria-label={isOpen ? 'Close menu' : 'Open menu'}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <FiMenu className="w-6 h-6" />
-          </motion.button>
+    <>
+      {/* Fixed Sidebar - Always visible on desktop, collapsible on mobile */}
+      <motion.aside
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-gray-900 text-white shadow-2xl transform transition-transform duration-300 ease-in-out ${
+          isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        }`}
+      >
+        <div className="h-full flex flex-col">
+          {/* Logo Section */}
+          <div className="flex items-center justify-between h-16 px-6 border-b border-gray-800">
+            <Link to="/" className="flex items-center space-x-2" onClick={closeMenu}>
+              <FaDumbbell className="h-8 w-8 text-blue-500" />
+              <span className="text-xl font-bold">Gym Pro</span>
+            </Link>
+            <button
+              onClick={closeMenu}
+              className="lg:hidden p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-800 focus:outline-none"
+              aria-label="Close sidebar"
+            >
+              <FiX className="h-6 w-6" />
+            </button>
+          </div>
 
-          {/* Logo */}
-          <Link to="/home" className="flex-shrink-0">
-            <h1 className="text-xl font-bold text-white">Gym Management</h1>
-          </Link>
+          {/* Navigation Links */}
+          <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+            {getNavLinks().map((link, index) => (
+              <button
+                key={link.path || link.name}
+                onClick={() => handleLinkClick(link)}
+                className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
+                  link.path && isActive(link.path)
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                }`}
+              >
+                <span className="mr-3">{link.icon}</span>
+                {link.name}
+              </button>
+            ))}
+          </nav>
 
-          {/* Profile Section */}
-          <div className="flex items-center">
+          {/* User Profile Section */}
+          <div className="p-4 border-t border-gray-800">
             {user || isAdmin ? (
-              <div className="relative">
-                <button
-                  onClick={() => setIsProfileOpen(!isProfileOpen)}
-                  className="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white"
-                >
-                  <span className="sr-only">Open user menu</span>
-                  <div className="h-8 w-8 rounded-full bg-purple-600 flex items-center justify-center">
-                    <FiUser className="h-4 w-4 text-white" />
+              <div className="space-y-2">
+                <div className="flex items-center px-4 py-3 rounded-lg bg-gray-800">
+                  <div className="h-10 w-10 rounded-full bg-blue-600 flex items-center justify-center">
+                    <FiUser className="h-5 w-5 text-white" />
                   </div>
-                  <span className="ml-2 text-sm font-medium text-gray-300 hidden md:inline">
-                    {isAdmin ? 'Admin' : (user?.name || 'Profile')}
-                  </span>
+                  <div className="ml-3 flex-1">
+                    <p className="text-sm font-medium text-white">
+                      {isAdmin ? 'Admin' : user?.name || 'User'}
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      {user?.email || 'admin@gym.com'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center w-full px-4 py-3 text-sm font-medium text-red-400 hover:bg-red-900/20 hover:text-red-300 rounded-lg transition-colors"
+                >
+                  <FiLogOut className="mr-3 h-5 w-5" />
+                  Sign Out
                 </button>
-
-                {/* Profile Dropdown */}
-                {isProfileOpen && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-gray-800 ring-1 ring-black ring-opacity-5 focus:outline-none z-50"
-                    role="menu"
-                  >
-                    <div className="py-1" role="none">
-                      
-                      
-                      <button
-                        onClick={handleLogout}
-                        className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
-                        role="menuitem"
-                      >
-                        <FiLogOut className="mr-2" /> Sign out
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
               </div>
             ) : (
-              <div className="hidden md:flex items-center space-x-4">
+              <div className="space-y-2">
                 <Link
                   to="/login"
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  onClick={closeMenu}
+                  className="block w-full px-4 py-3 text-sm text-center font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   Sign In
                 </Link>
                 <Link
                   to="/signup"
-                  className="px-4 py-2 text-sm font-medium text-blue-700 bg-white border border-blue-300 rounded-md hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  onClick={closeMenu}
+                  className="block w-full px-4 py-3 text-sm text-center font-medium text-gray-300 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors"
                 >
                   Sign Up
                 </Link>
               </div>
             )}
           </div>
-
         </div>
-      </div>
+      </motion.aside>
 
-      {/* Mobile Menu */}
+      {/* Mobile Overlay */}
       <AnimatePresence>
         {isOpen && (
-          <>
-            {/* Blurred Overlay */}
-            <motion.div
-              variants={overlayVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-              transition={{ duration: 0.3 }}
-              onClick={() => setIsOpen(false)}
-              className="fixed inset-0 bg-black/50 z-40"
-            />
-
-            {/* Mobile Menu */}
-            <motion.div
-              variants={menuVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-              className="menu-content fixed top-0 left-0 w-80 h-screen bg-black text-white z-50 overflow-y-auto py-6 px-8 shadow-2xl"
-            >
-              {/* Close Button */}
-              <motion.button
-                onClick={closeMenu}
-                className="close-button absolute top-6 right-6 p-3 rounded-full bg-gray-800/80 backdrop-blur-sm border border-gray-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 focus:outline-none hover:bg-gray-700/90"
-                aria-label="Close menu"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0, transition: { delay: 0.2 } }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <FiX className="w-6 h-6 text-gray-100" />
-              </motion.button>
-              <div className="container mx-auto h-full flex flex-col">
-                {/* Logo */}
-                <div className="mb-12">
-                  <Link 
-                    to="/" 
-                    className="text-3xl font-bold text-white"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    GymFit Pro
-                  </Link>
-                </div>
-
-                {/* Navigation Links */}
-                <nav className="flex-1 flex flex-col space-y-4 pt-8">
-                  {getNavLinks().map((link, index) => (
-                    <motion.div
-                      key={link.path || link.name}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ 
-                        opacity: 1, 
-                        x: 0,
-                        transition: { delay: 0.1 * index }
-                      }}
-                    >
-                      <button
-                        onClick={() => handleLinkClick(link)}
-                        className={`flex items-center px-6 py-4 rounded-xl text-lg font-medium transition-all w-full text-left ${
-                          link.path && isActive(link.path) 
-                            ? 'bg-gradient-to-r from-indigo-600/20 to-purple-600/20 text-white border-l-4 border-indigo-400' 
-                            : 'text-gray-300 hover:bg-gray-800/50 hover:text-white'
-                        }`}
-                      >
-                        <span className="mr-3">{link.icon}</span>
-                        {link.name}
-                      </button>
-                    </motion.div>
-                  ))}
-                </nav>
-
-                {/* Auth Buttons or User/Admin Profile */}
-                <div className="mt-auto pt-6 border-t border-gray-700">
-                  {user || isAdmin ? (
-                    <div className="space-y-4">
-                      {/* Settings and Logout */}
-                      {[
-                        ...(isAdmin 
-                          ? [
-                              { name: 'Settings', path: '/admin/settings', icon: <FiSettings className="w-5 h-5" /> }
-                            ] 
-                          : []
-                        ),
-                        { name: 'Sign Out', action: handleLogout, icon: <FiLogOut className="w-5 h-5" /> }
-                      ].map((item, index) => (
-                        <motion.div
-                          key={item.name}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{
-                            opacity: 1,
-                            y: 0,
-                            transition: {
-                              delay: 0.1 * (index + 1) + 0.3,
-                              type: 'spring',
-                              stiffness: 300
-                            }
-                          }}
-                        >
-                          <button
-                            onClick={() => {
-                              if (item.action) {
-                                item.action();
-                              } else {
-                                handleLinkClick(item);
-                              }
-                            }}
-                            className="w-full flex items-center px-6 py-4 rounded-xl text-lg font-medium text-gray-300 hover:bg-gray-800/50 hover:text-white transition-all"
-                          >
-                            <span className="mr-3">{item.icon}</span>
-                            {item.name}
-                          </button>
-                        </motion.div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {authLinks.map((link, index) => (
-                        <motion.div
-                          key={link.path}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{
-                            opacity: 1,
-                            y: 0,
-                            transition: {
-                              delay: 0.1 * index + 0.3,
-                              type: 'spring',
-                              stiffness: 300
-                            }
-                          }}
-                        >
-                          <button
-                            onClick={() => handleLinkClick(link.path)}
-                            className={`w-full flex items-center justify-center px-6 py-4 rounded-xl text-lg font-medium transition-all ${
-                              link.name === 'Sign Up'
-                                ? 'bg-white text-gray-900 hover:bg-gray-100 hover:shadow-lg hover:shadow-white/10'
-                                : 'border-2 border-gray-700 text-gray-300 hover:border-indigo-500 hover:text-white'
-                            }`}
-                          >
-                            {link.icon}
-                            <span className="ml-2">{link.name}</span>
-                          </button>
-                        </motion.div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </motion.div>
-          </>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={closeMenu}
+            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          />
         )}
       </AnimatePresence>
-    </div>
+
+      {/* Top Bar - Only visible on mobile */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-30 bg-gray-900/95 backdrop-blur-sm border-b border-gray-800">
+        <div className="flex items-center justify-between h-16 px-4">
+          <button
+            onClick={toggleMenu}
+            className="p-2 rounded-md text-gray-300 hover:text-white hover:bg-gray-800 focus:outline-none"
+            aria-label="Open menu"
+          >
+            <FiMenu className="h-6 w-6" />
+          </button>
+          <Link to="/" className="flex items-center space-x-2">
+            <FaDumbbell className="h-6 w-6 text-blue-500" />
+            <span className="text-lg font-bold text-white">Gym Pro</span>
+          </Link>
+          <div className="w-10"></div>
+        </div>
+      </div>
+    </>
   );
 };
 

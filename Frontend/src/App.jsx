@@ -14,6 +14,11 @@ import CompleteProfile from './auth/CompleteProfile';
 import ForgotPassword from './auth/ForgotPassword';
 import PaymentStatus from './pages/PaymentStatus';
 import Profile from './pages/Profile';
+import TerminatedUsersPage from './Admin/TerminatedUsersPage';
+import BranchesPage from './Admin/BranchesPage';
+import PlansPage from './Admin/PlansPage';
+import RevenuePage from './Admin/RevenuePage';
+import CouponsPage from './Admin/CouponsPage';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import ProfileCompletionGuard from './components/ProfileCompletionGuard';
@@ -34,14 +39,14 @@ const PaymentStatusRedirect = () => {
 
 function AppContent() {
   const location = useLocation();
-  const hideNavbarPaths = ['/login', '/signup', '/verify-otp', '/adminlogin', '/payment-status', '/complete-profile'];
+  const hideNavbarPaths = ['/login', '/signup', '/verify-otp', '/adminlogin', '/payment-status', '/complete-profile', '/forgot-password'];
   const showNavbar = !hideNavbarPaths.includes(location.pathname);
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white">
       <ToastContainer position="top-right" autoClose={5000} hideProgressBar={false} newestOnTop closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
       {showNavbar && <Navbar />}
-      <div className={`min-h-full ${showNavbar ? 'pt-16' : ''}`}>
+      <div className={`min-h-screen ${showNavbar ? 'lg:ml-64 pt-16 lg:pt-0' : ''}`}>
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<ProfileCompletionGuard><Home /></ProfileCompletionGuard>} />
@@ -61,6 +66,11 @@ function AppContent() {
 
           {/* Protected Routes - Only accessible when authenticated */}
           <Route path="/admin" element={<ProtectedRoute requireAuth={true}><AdminHome /></ProtectedRoute>} />
+          <Route path="/admin/terminated-users" element={<ProtectedRoute requireAuth={true}><TerminatedUsersPage /></ProtectedRoute>} />
+          <Route path="/admin/branches" element={<ProtectedRoute requireAuth={true}><BranchesPage /></ProtectedRoute>} />
+          <Route path="/admin/plans" element={<ProtectedRoute requireAuth={true}><PlansPage /></ProtectedRoute>} />
+          <Route path="/admin/revenue" element={<ProtectedRoute requireAuth={true}><RevenuePage /></ProtectedRoute>} />
+          <Route path="/admin/coupons" element={<ProtectedRoute requireAuth={true}><CouponsPage /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute requireAuth={true}><ProfileCompletionGuard><Profile /></ProfileCompletionGuard></ProtectedRoute>} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
