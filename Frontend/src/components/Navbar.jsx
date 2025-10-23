@@ -227,7 +227,7 @@ const Navbar = () => {
     <>
       {/* Fixed Sidebar - Always visible on desktop, collapsible on mobile */}
       <motion.aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white text-gray-900 shadow-lg transform transition-transform duration-300 ease-in-out ${
+        className={`fixed inset-y-0 left-0 z-50 w-72 bg-white text-gray-900 shadow-lg transform transition-all duration-300 ease-in-out ${
           isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
       >
@@ -253,13 +253,15 @@ const Navbar = () => {
               <button
                 key={link.path || link.name}
                 onClick={() => handleLinkClick(link)}
-                className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
+                className={`group flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-all duration-300 ease-in-out ${
                   link.path && isActive(link.path)
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                    ? 'bg-blue-50 text-blue-700 shadow-sm'
+                    : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600 hover:translate-x-1'
                 }`}
               >
-                <span className="mr-3">{link.icon}</span>
+                <span className="mr-3 transition-transform duration-300 group-hover:scale-110">
+                  {link.icon}
+                </span>
                 {link.name}
               </button>
             ))}
@@ -269,24 +271,26 @@ const Navbar = () => {
           <div className="p-4 border-t border-gray-200">
             {user || isAdmin ? (
               <div className="space-y-2">
-                <div className="flex items-center px-4 py-3 rounded-lg bg-gray-100">
-                  <div className="h-10 w-10 rounded-full bg-blue-600 flex items-center justify-center">
-                    <FiUser className="h-5 w-5 text-white" />
+                <div className="flex items-center px-4 py-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors duration-300 shadow-sm">
+                  <div className="flex-shrink-0">
+                    <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-medium">
+                      {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                    </div>
                   </div>
-                  <div className="ml-3 flex-1">
-                    <p className="text-sm font-medium text-gray-900">
-                      {isAdmin ? 'Admin' : user?.name || 'User'}
+                  <div className="ml-3 min-w-0 flex-1">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {user?.name || 'User'}
                     </p>
-                    <p className="text-xs text-gray-600">
-                      {user?.email || 'admin@gym.com'}
+                    <p className="text-xs text-gray-500 truncate">
+                      {user?.email || 'user@example.com'}
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={handleLogout}
-                  className="flex items-center w-full px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 hover:text-red-700 rounded-lg transition-colors"
+                  className="group flex items-center w-full px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 hover:text-red-700 rounded-lg transition-all duration-300 ease-in-out hover:shadow-sm hover:-translate-y-0.5"
                 >
-                  <FiLogOut className="mr-3 h-5 w-5" />
+                  <FiLogOut className="mr-3 h-5 w-5 transition-transform duration-300 group-hover:scale-110" />
                   Sign Out
                 </button>
               </div>
@@ -295,14 +299,14 @@ const Navbar = () => {
                 <Link
                   to="/login"
                   onClick={closeMenu}
-                  className="block w-full px-4 py-3 text-sm text-center font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+                  className="block w-full px-4 py-3 text-sm text-center font-medium text-white bg-gradient-to-r from-blue-600 to-blue-500 rounded-lg hover:from-blue-700 hover:to-blue-600 transition-all duration-300 transform hover:shadow-md hover:-translate-y-0.5"
                 >
                   Sign In
                 </Link>
                 <Link
                   to="/signup"
                   onClick={closeMenu}
-                  className="block w-full px-4 py-3 text-sm text-center font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="block w-full px-4 py-3 text-sm text-center font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-all duration-300 transform hover:shadow-sm hover:-translate-y-0.5"
                 >
                   Sign Up
                 </Link>
@@ -333,7 +337,16 @@ const Navbar = () => {
             className="p-2 rounded-md text-gray-600 hover:text-black hover:bg-gray-100 focus:outline-none"
             aria-label="Open menu"
           >
-            <FiMenu className="h-6 w-6" />
+            <motion.div
+              animate={isOpen ? { rotate: 180 } : { rotate: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              {isOpen ? (
+                <FiX className="h-6 w-6" />
+              ) : (
+                <FiMenu className="h-6 w-6" />
+              )}
+            </motion.div>
           </button>
           <Link to="/" className="flex items-center space-x-2">
             <FaDumbbell className="h-6 w-6 text-blue-500" />

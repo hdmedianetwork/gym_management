@@ -525,14 +525,6 @@ const Home = () => {
                   {user.mobile ? `Mobile: ${user.mobile}` : 'Thank you for joining us!'}
                 </p>
               </div>
-              <div className="mt-4 md:mt-0">
-                <button
-                  onClick={() => navigate('/profile')}
-                  className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  View Profile
-                </button>
-              </div>
             </div>
           </div>
         </motion.div>
