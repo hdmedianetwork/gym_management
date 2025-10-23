@@ -12,11 +12,23 @@ const ProtectedRoute = ({ children, requireAuth = true, redirectTo = '/' }) => {
     const checkAuth = async () => {
       try {
         const token = localStorage.getItem('token');
+        const isAdminFlag = localStorage.getItem('isAdmin') === 'true';
+        
         if (!token) {
           setIsAuthenticated(false);
+          setIsLoading(false);
           return;
         }
         
+        // For admin routes, we don't need to fetch user data if isAdmin flag is set
+        if (location.pathname.startsWith('/admin') && isAdminFlag) {
+          setIsAuthenticated(true);
+          setIsAdmin(true);
+          setIsLoading(false);
+          return;
+        }
+        
+        // For non-admin routes, fetch user data
         const user = await getCurrentUser();
         if (user) {
           setIsAuthenticated(true);
@@ -24,11 +36,13 @@ const ProtectedRoute = ({ children, requireAuth = true, redirectTo = '/' }) => {
         } else {
           setIsAuthenticated(false);
           localStorage.removeItem('token');
+          localStorage.removeItem('isAdmin');
         }
       } catch (error) {
         console.error('Auth check error:', error);
         setIsAuthenticated(false);
         localStorage.removeItem('token');
+        localStorage.removeItem('isAdmin');
       } finally {
         setIsLoading(false);
       }
@@ -43,14 +57,21 @@ const ProtectedRoute = ({ children, requireAuth = true, redirectTo = '/' }) => {
 
   // For routes that require authentication
   if (requireAuth) {
-    // If not authenticated, redirect to login
-    if (!isAuthenticated && !isAdmin) {
-      return <Navigate to="/login" state={{ from: location.pathname || '/' }} replace />;
-    }
+    // Check if it's an admin route
+    const isAdminRoute = location.pathname.startsWith('/admin');
     
-    // If trying to access admin routes, ensure user is admin
-    if (location.pathname.startsWith('/admin') && !isAdmin) {
-      return <Navigate to="/" replace />;
+    // If it's an admin route, check for admin authentication
+    if (isAdminRoute) {
+      const isAdminAuthenticated = localStorage.getItem('isAdmin') === 'true';
+      if (!isAdminAuthenticated) {
+        return <Navigate to="/adminlogin" state={{ from: location.pathname }} replace />;
+      }
+      // If admin is authenticated, allow access to admin routes
+      return children;
+    } 
+    // For non-admin routes, check regular authentication
+    else if (!isAuthenticated) {
+      return <Navigate to="/login" state={{ from: location.pathname || '/' }} replace />;
     }
   }
 

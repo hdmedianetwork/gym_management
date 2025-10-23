@@ -52,10 +52,23 @@ const AdminLogin = () => {
       if ((res.data.message && res.data.message.includes("OTP verified")) || res.data.token) {
         toast.success("Admin verified");
         // Store the authentication token and admin status
-        localStorage.setItem('token', res.data.token || 'admin-authenticated');
+        const token = res.data.token || 'admin-authenticated';
+        localStorage.setItem('token', token);
         localStorage.setItem('isAdmin', 'true');
-        // Force a full page reload to properly initialize the auth state
-        window.location.href = '/admin';
+        
+        // Set a flag to indicate we just logged in
+        sessionStorage.setItem('justLoggedIn', 'true');
+        
+        // Check if there's a redirect URL in the location state
+        const from = location.state?.from || '/admin';
+        
+        // Force a small delay to ensure state is updated
+        setTimeout(() => {
+          // Use navigate with replace to prevent going back to login
+          navigate(from, { replace: true });
+          // Force a reload to ensure all components get the updated auth state
+          window.location.reload();
+        }, 100);
       } else {
         toast.error("Invalid OTP");
       }
