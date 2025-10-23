@@ -1110,10 +1110,14 @@ const Home = () => {
                   onClick: () => handleUserClick(record),
                   className: 'cursor-pointer hover:bg-gray-50'
                 })}
-                pagination={false}
+                pagination={{
+                  pageSize: 7,
+                  showSizeChanger: false,
+                  showQuickJumper: false,
+                  position: ['bottomRight']
+                }}
                 scroll={{ 
                   x: 'max-content',
-                  y: 'calc(70vh - 300px)',
                   scrollToFirstRowOnChange: true
                 }}
                 className="min-w-full [&_.ant-table-thead>tr>th]:whitespace-nowrap [&_.ant-table-tbody>tr>td]:whitespace-nowrap [&_.ant-table-thead>tr>th]:bg-gray-50 [&_.ant-table-thead>tr>th]:text-gray-600 [&_.ant-table-tbody>tr>td]:text-gray-700"
