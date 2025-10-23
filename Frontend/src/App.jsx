@@ -49,8 +49,16 @@ function AppContent() {
       <div className={`min-h-screen ${showNavbar ? 'lg:ml-64 pt-16 lg:pt-0' : ''}`}>
         <Routes>
           {/* Public Routes */}
-          <Route path="/" element={<ProfileCompletionGuard><Home /></ProfileCompletionGuard>} />
-          <Route path="/home" element={<ProfileCompletionGuard><Home /></ProfileCompletionGuard>} />
+          <Route path="/" element={
+            <ProtectedRoute requireAuth={false} redirectTo="/home">
+              <Navigate to="/login" replace />
+            </ProtectedRoute>
+          } />
+          <Route path="/home" element={
+            <ProtectedRoute requireAuth={true}>
+              <ProfileCompletionGuard><Home /></ProfileCompletionGuard>
+            </ProtectedRoute>
+          } />
           <Route path="/contact" element={<ContactUs />} />
 
           {/* Payment Status - Only accessible when coming from payment flow */}
