@@ -21,6 +21,7 @@ import BranchesPage from './Admin/BranchesPage';
 import PlansPage from './Admin/PlansPage';
 import RevenuePage from './Admin/RevenuePage';
 import CouponsPage from './Admin/CouponsPage';
+import AdminSettings from './Admin/AdminSettings';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import ProfileCompletionGuard from './components/ProfileCompletionGuard';
@@ -85,6 +86,7 @@ function AppContent() {
           <Route path="/admin/plans" element={<ProtectedRoute requireAuth={true}><PlansPage /></ProtectedRoute>} />
           <Route path="/admin/revenue" element={<ProtectedRoute requireAuth={true}><RevenuePage /></ProtectedRoute>} />
           <Route path="/admin/coupons" element={<ProtectedRoute requireAuth={true}><CouponsPage /></ProtectedRoute>} />
+          <Route path="/admin/settings" element={<ProtectedRoute requireAuth={true}><AdminSettings /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute requireAuth={true}><ProfileCompletionGuard><Profile /></ProfileCompletionGuard></ProtectedRoute>} />
           <Route path="/plan" element={<ProtectedRoute requireAuth={true}><Plan /></ProtectedRoute>} />
           <Route path="/settings" element={
