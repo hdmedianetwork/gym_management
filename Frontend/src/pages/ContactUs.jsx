@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { staggerContainer, fadeIn } from '../utils/motion';
+import Navbar from '../components/Navbar';
+import { FiMail, FiPhone, FiMapPin, FiClock, FiSend, FiAlertTriangle, FiCheckCircle, FiArrowRight } from 'react-icons/fi';
+import { Input, Button } from 'antd';
 
 const ContactUs = () => {
   const [formData, setFormData] = useState({
@@ -24,180 +27,209 @@ const ContactUs = () => {
   };
 
   return (
-    <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white pt-4 sm:pt-8 pb-8 px-4 sm:px-6 md:px-8 lg:px-12 overflow-hidden"
-    >
-      <div className="fixed inset-0 overflow-hidden -z-10">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-500/10 to-transparent opacity-30"></div>
-      </div>
+    <div className="min-h-screen bg-white text-gray-900">
+      <Navbar />
+      
+      {/* Background Gradient */}
+      <div className="absolute inset-0 -z-10 bg-gradient-to-br from-gray-50 to-white"></div>
 
       <motion.div 
         variants={staggerContainer}
-        className="relative max-w-7xl mx-auto"
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, amount: 0.25 }}
+        className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20"
       >
         <motion.div 
           variants={fadeIn('up', 'tween', 0.1, 1)}  
-          className="text-center mb-8 sm:mb-12"
+          className="text-center mb-12 sm:mb-16"
         >
-          <span className="text-blue-400 text-xl sm:text-2xl font-bold tracking-wider uppercase">
+          <motion.span 
+            className="inline-flex items-center mb-4 px-4 py-1.5 text-xs font-medium tracking-wider text-blue-600 bg-blue-50 rounded-full"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+          >
+            <FiAlertTriangle className="mr-2 h-4 w-4" />
             GET IN TOUCH
-          </span>
-          <h1 className="mt-2 text-3xl sm:text-4xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-gray-100 to-gray-400 lg:text-6xl">
-            Contact Us
-          </h1>
-          <p className="mt-4 max-w-2xl mx-auto text-lg text-gray-300">
-            Have questions or feedback? We'd love to hear from you. Fill out the form below and we'll get back to you as soon as possible.
-          </p>
+          </motion.span>
+          <motion.h1 
+            className="mt-3 text-2xl sm:text-3xl font-bold tracking-tight text-gray-900"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.6 }}
+          >
+            Contact Our Team
+          </motion.h1>
+          <motion.p 
+            className="mt-3 max-w-2xl mx-auto text-sm text-gray-500"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 0.6 }}
+          >
+            Have questions or feedback? We're here to help. Reach out to us through the form below or use our contact information.
+          </motion.p>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
           <motion.div
             variants={fadeIn('right', 'tween', 0.2, 1)}
-            className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 sm:p-8"
+            className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 sm:p-8"
           >
-            <h2 className="text-2xl font-bold mb-6">Send us a Message</h2>
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">Send us a Message</h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-1">
-                  Full Name
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                  Full Name <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
+                <Input
                   id="name"
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-400"
                   placeholder="Your name"
+                  size="large"
                   required
+                  className="w-full"
                 />
               </div>
 
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
-                  Email Address
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                  Email Address <span className="text-red-500">*</span>
                 </label>
-                <input
+                <Input
                   type="email"
                   id="email"
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-400"
                   placeholder="your.email@example.com"
+                  size="large"
                   required
+                  className="w-full"
                 />
               </div>
 
               <div>
-                <label htmlFor="subject" className="block text-sm font-medium text-gray-300 mb-1">
-                  Subject
+                <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">
+                  Subject <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
+                <Input
                   id="subject"
                   name="subject"
                   value={formData.subject}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-400"
                   placeholder="How can we help?"
+                  size="large"
                   required
+                  className="w-full"
                 />
               </div>
 
               <div>
-                <label htmlFor="message" className="block text-sm font-medium text-gray-300 mb-1">
-                  Message
+                <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
+                  Message <span className="text-red-500">*</span>
                 </label>
-                <textarea
+                <Input.TextArea
                   id="message"
                   name="message"
-                  rows="4"
+                  rows={4}
                   value={formData.message}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-400"
                   placeholder="Your message..."
+                  className="w-full"
                   required
-                ></textarea>
+                />
               </div>
 
-              <button
-                type="submit"
-                className="w-full py-3 px-6 bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-600 hover:to-cyan-500 text-white font-medium rounded-lg transition-all duration-200"
+              <Button
+                type="primary"
+                htmlType="submit"
+                size="large"
+                className="w-full mt-2 bg-blue-600 hover:bg-blue-700 border-none h-11 font-medium text-sm"
+                icon={<FiSend className="mr-2" />}
               >
                 Send Message
-              </button>
+              </Button>
             </form>
           </motion.div>
 
           <motion.div
             variants={fadeIn('left', 'tween', 0.3, 1)}
-            className="space-y-8"
+            className="space-y-6"
           >
-            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 sm:p-8">
-              <h3 className="text-xl font-semibold mb-4">Contact Information</h3>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-6">Contact Information</h3>
               
-              <div className="space-y-4">
+              <div className="space-y-5">
                 <div className="flex items-start">
-                  <div className="flex-shrink-0 h-10 w-10 rounded-full bg-blue-500/20 flex items-center justify-center mr-4 mt-1">
-                    <svg className="h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                    </svg>
+                  <div className="flex-shrink-0 h-10 w-10 rounded-lg bg-blue-50 flex items-center justify-center mr-4">
+                    <FiPhone className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
-                    <h4 className="font-medium text-gray-200">Phone</h4>
-                    <p className="text-gray-400">+1 (555) 123-4567</p>
+                    <h4 className="text-sm font-medium text-gray-700">Phone</h4>
+                    <p className="text-sm text-gray-600 mt-1">+1 (555) 123-4567</p>
                   </div>
                 </div>
 
                 <div className="flex items-start">
-                  <div className="flex-shrink-0 h-10 w-10 rounded-full bg-blue-500/20 flex items-center justify-center mr-4 mt-1">
-                    <svg className="h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
+                  <div className="flex-shrink-0 h-10 w-10 rounded-lg bg-blue-50 flex items-center justify-center mr-4">
+                    <FiMail className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
-                    <h4 className="font-medium text-gray-200">Email</h4>
-                    <p className="text-blue-400">info@yourgym.com</p>
+                    <h4 className="text-sm font-medium text-gray-700">Email</h4>
+                    <p className="text-sm text-blue-600 mt-1">info@yourgym.com</p>
                   </div>
                 </div>
 
                 <div className="flex items-start">
-                  <div className="flex-shrink-0 h-10 w-10 rounded-full bg-blue-500/20 flex items-center justify-center mr-4 mt-1">
-                    <svg className="h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
+                  <div className="flex-shrink-0 h-10 w-10 rounded-lg bg-blue-50 flex items-center justify-center mr-4">
+                    <FiMapPin className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
-                    <h4 className="font-medium text-gray-200">Address</h4>
-                    <p className="text-gray-400">123 Fitness Street<br />New York, NY 10001</p>
+                    <h4 className="text-sm font-medium text-gray-700">Address</h4>
+                    <p className="text-sm text-gray-600 mt-1">123 Fitness Street<br />New York, NY 10001</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 sm:p-8">
-              <h3 className="text-xl font-semibold mb-4">Business Hours</h3>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-6">Business Hours</h3>
               <ul className="space-y-3">
                 {[
                   { day: 'Monday - Friday', hours: '6:00 AM - 10:00 PM' },
                   { day: 'Saturday', hours: '8:00 AM - 8:00 PM' },
-                  { day: 'Sunday', hours: '8:00 AM - 6:00 PM' }
+                  { day: 'Sunday', hours: '9:00 AM - 6:00 PM' },
+                  { day: 'Holidays', hours: '10:00 AM - 4:00 PM' },
                 ].map((item, index) => (
-                  <li key={index} className="flex justify-between">
-                    <span className="text-gray-300">{item.day}</span>
-                    <span className="text-gray-400">{item.hours}</span>
-                  </li>
+                  <motion.li 
+                    key={index}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.4 + (index * 0.1) }}
+                    className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0 text-sm"
+                  >
+                    <span className="font-medium text-gray-700">{item.day}</span>
+                    <span className="text-gray-500">{item.hours}</span>
+                  </motion.li>
                 ))}
               </ul>
+              <div className="mt-6">
+                <Button 
+                  type="default"
+                  className="w-full flex items-center justify-center text-blue-600 hover:text-blue-700 border border-blue-200 hover:border-blue-300"
+                  icon={<FiArrowRight className="transition-transform group-hover:translate-x-1" />}
+                >
+                  Get Directions
+                </Button>
+              </div>
             </div>
           </motion.div>
         </div>
       </motion.div>
-    </motion.div>
+    </div>
   );
 };
 
