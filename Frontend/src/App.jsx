@@ -15,6 +15,7 @@ import ForgotPassword from './auth/ForgotPassword';
 import PaymentStatus from './pages/PaymentStatus';
 import Profile from './pages/Profile';
 import Plan from './pages/Plan';
+import Settings from './pages/Settings';
 import TerminatedUsersPage from './Admin/TerminatedUsersPage';
 import BranchesPage from './Admin/BranchesPage';
 import PlansPage from './Admin/PlansPage';
@@ -86,6 +87,11 @@ function AppContent() {
           <Route path="/admin/coupons" element={<ProtectedRoute requireAuth={true}><CouponsPage /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute requireAuth={true}><ProfileCompletionGuard><Profile /></ProfileCompletionGuard></ProtectedRoute>} />
           <Route path="/plan" element={<ProtectedRoute requireAuth={true}><Plan /></ProtectedRoute>} />
+          <Route path="/settings" element={
+            <ProtectedRoute requireAuth={true}>
+              <ProfileCompletionGuard><Settings /></ProfileCompletionGuard>
+            </ProtectedRoute>
+          } />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
