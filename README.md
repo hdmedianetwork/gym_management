@@ -1,1 +1,1 @@
-It is a freelance project
+It is a freelance project.
