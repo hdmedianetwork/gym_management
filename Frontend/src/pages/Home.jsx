@@ -29,32 +29,8 @@ const Home = () => {
   const [plansError, setPlansError] = React.useState(null);
 
   // Helper function to get plan features based on plan type
-  const getPlanFeatures = (planType) => {
-    const features = {
-      basic: [
-        'Access to gym floor',
-        'Standard equipment',
-        'Locker room access',
-        '1 Free Training'
-      ],
-      standard: [
-        'All Basic features',
-        'Group classes',
-        'Sauna access',
-        '3 Free Trainings',
-        'Nutrition plan'
-      ],
-      premium: [
-        'All Standard features',
-        '24/7 Access',
-        'Personal trainer',
-        'Unlimited classes',
-        'Massage chair access',
-        'Elite locker'
-      ]
-    };
-    return features[planType.toLowerCase()] || [];
-  };
+  
+    
 
   // Helper function to get plan styling based on plan type
   const getPlanStyling = (planType, index) => {
@@ -523,60 +499,217 @@ const Home = () => {
 
       {/* Membership Summary (hidden for admin) */}
       {!isAdmin && user && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+        <div className="w-full">
           {isLoadingPayment ? (
-            <div className="bg-white border border-gray-200 rounded-xl p-6 text-gray-600">
-              Fetching your membership details...
+            <div className="text-center py-12">
+              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent"></div>
+              <p className="mt-4 text-gray-600">Loading your membership details...</p>
             </div>
           ) : latestPayment ? (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4 }}
-              className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-8 shadow-sm"
-            >
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900">Your Membership</h3>
-                  <p className="text-sm text-gray-500">Linked to {user.email}</p>
+            <div className="w-full bg-gradient-to-br from-blue-50 to-indigo-50 py-12 px-4 sm:px-6 lg:px-8">
+              <div className="max-w-6xl mx-auto">
+                <div className="text-center mb-12">
+                  <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl mb-4">
+                    Welcome to Your Membership
+                  </h1>
+                  <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+                    Manage your fitness journey with us
+                  </p>
                 </div>
-                {latestPayment.status && (
-                  <span className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-                    {String(latestPayment.status).toUpperCase()}
-                  </span>
-                )}
-              </div>
 
-              <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-               
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <p className="text-xs text-gray-500">Amount</p>
-                  <p className="mt-1 font-medium text-gray-900">₹{Number(latestPayment.amount || 0).toLocaleString('en-IN')}</p>
-                </div>
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <p className="text-xs text-gray-500">Payment Date</p>
-                  <p className="mt-1 font-medium text-gray-900">{latestPayment.paymentDate ? new Date(latestPayment.paymentDate).toLocaleDateString('en-IN') : 'N/A'}</p>
-                </div>
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <p className="text-xs text-gray-500">Duration</p>
-                  <p className="mt-1 font-medium text-gray-900">{latestPayment.duration} month{latestPayment.duration > 1 ? 's' : ''}</p>
-                </div>
-              </div>
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-8 md:p-10 max-w-5xl mx-auto pointer-events-auto">
+                  <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-10">
+                    <div>
+                      <div className="flex items-center gap-3 mb-2">
+                        <h2 className="text-2xl font-bold text-gray-900">
+                          {latestPayment.planName || 'Gym Membership'}
+                        </h2>
+                        {latestPayment.status && (
+                          <span className="inline-flex items-center px-3 py-1 text-sm font-medium rounded-full bg-green-100 text-green-800">
+                            {String(latestPayment.status).toUpperCase()}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-gray-600">
+                        <span className="font-medium">Member since:</span>{' '}
+                        {latestPayment.paymentDate ? new Date(latestPayment.paymentDate).toLocaleDateString('en-IN', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        }) : 'N/A'}
+                      </p>
+                      <p className="text-sm text-gray-500 mt-1">Linked to {user.email}</p>
+                    </div>
+                    
+                    <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-6 rounded-xl text-center min-w-[200px]">
+                      <p className="text-sm font-medium mb-1">Current Plan</p>
+                      <p className="text-3xl font-bold">
+                        ₹{Number(latestPayment.amount || 0).toLocaleString('en-IN')}
+                      </p>
+                      <p className="text-sm opacity-90">
+                        for {latestPayment.duration || 1} {latestPayment.duration > 1 ? 'months' : 'month'}
+                      </p>
+                    </div>
+                  </div>
 
-              <div className="mt-4 text-xs text-gray-500">
-                Payment ID: <span className="font-mono">{latestPayment.paymentId}</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+                    {/* Payment ID Card */}
+                    <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-sm font-medium text-gray-500">Payment ID</h3>
+                        <div className="p-2 bg-blue-50 rounded-lg">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        </div>
+                      </div>
+                      <p className="text-lg font-semibold text-gray-900 break-all">
+                        {latestPayment.paymentId || 'N/A'}
+                      </p>
+                    </div>
+
+                    {/* Membership Type Card */}
+                    <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-sm font-medium text-gray-500">Membership Type</h3>
+                        <div className="p-2 bg-purple-50 rounded-lg">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                        </div>
+                      </div>
+                      <p className="text-lg font-semibold text-gray-900">
+                        {latestPayment.planName || 'Standard Membership'}
+                      </p>
+                      <p className="text-sm text-gray-500 mt-1">Active</p>
+                    </div>
+
+                    {/* Billing Cycle Card */}
+                    <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-sm font-medium text-gray-500">Billing Cycle</h3>
+                        <div className="p-2 bg-green-50 rounded-lg">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                      </div>
+                      <p className="text-lg font-semibold text-gray-900">
+                        {latestPayment.duration || 1} {latestPayment.duration > 1 ? 'Months' : 'Month'}
+                      </p>
+                      <p className="text-sm text-gray-500 mt-1">
+                        {latestPayment.paymentDate ? `Started ${new Date(latestPayment.paymentDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` : 'Start date not available'}
+                      </p>
+                    </div>
+
+                    {/* Next Billing Date Card */}
+                    <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-sm font-medium text-gray-500">Next Billing</h3>
+                        <div className="p-2 bg-yellow-50 rounded-lg">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                        </div>
+                      </div>
+                      {latestPayment.paymentDate && latestPayment.duration ? (
+                        <>
+                          <p className="text-lg font-semibold text-gray-900">
+                            {(() => {
+                              const nextDate = new Date(latestPayment.paymentDate);
+                              nextDate.setMonth(nextDate.getMonth() + (parseInt(latestPayment.duration) || 1));
+                              return nextDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                            })()}
+                          </p>
+                          <p className="text-sm text-gray-500 mt-1">
+                            {(() => {
+                              const today = new Date();
+                              const nextDate = new Date(latestPayment.paymentDate);
+                              nextDate.setMonth(nextDate.getMonth() + (parseInt(latestPayment.duration) || 1));
+                              const diffTime = nextDate - today;
+                              const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                              return diffDays > 0 ? `In ${diffDays} ${diffDays === 1 ? 'day' : 'days'}` : 'Due now';
+                            })()}
+                          </p>
+                        </>
+                      ) : (
+                        <p className="text-gray-500">Not available</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center relative z-10">
+                    <button 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('Upgrade Plan clicked');
+                        navigate('/plan');
+                      }}
+                      className="flex-1 max-w-xs flex items-center justify-center gap-2 border-2 border-blue-200 bg-white text-blue-600 hover:bg-blue-50 font-medium py-3 px-6 rounded-lg transition-all duration-200 cursor-pointer hover:shadow-md active:scale-95"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
+                        <path fillRule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clipRule="evenodd" />
+                      </svg>
+                      Upgrade Plan
+                    </button>
+                    <button 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('Get Help clicked');
+                        navigate('/contact');
+                      }}
+                      className="flex-1 max-w-xs flex items-center justify-center gap-2 border-2 border-gray-200 bg-white text-gray-700 hover:bg-gray-50 font-medium py-3 px-6 rounded-lg transition-all duration-200 cursor-pointer hover:shadow-md active:scale-95"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h2a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                      </svg>
+                      Get Help
+                    </button>
+                  </div>
+                </div>
               </div>
-            </motion.div>
+            </div>
           ) : (
-            <div className="bg-white border border-gray-200 rounded-xl p-6 text-gray-600">
-              No payments found for {user.email}. Choose a plan below to get started.
+            <div className="min-h-[60vh] flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50">
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="text-center max-w-2xl mx-auto px-4 py-12"
+              >
+                <div className="inline-flex items-center justify-center w-20 h-20 bg-blue-100 rounded-full mb-6">
+                  <FiCheckCircle className="w-10 h-10 text-blue-600" />
+                </div>
+                <h2 className="text-3xl font-bold text-gray-900 mb-4">Ready to Get Started?</h2>
+                <p className="text-xl text-gray-600 mb-8">
+                  You don't have an active membership yet. Choose a plan that fits your fitness goals and start your journey with us today.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <button
+                    onClick={() => navigate('/plan')}
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium py-3 px-8 rounded-lg transition-all duration-200 transform hover:scale-105 text-lg"
+                  >
+                    View Membership Plans
+                  </button>
+                  <button
+                    onClick={() => document.getElementById('plans')?.scrollIntoView({ behavior: 'smooth' })}
+                    className="border-2 border-blue-200 bg-white text-blue-600 hover:bg-blue-50 font-medium py-3 px-8 rounded-lg transition-all duration-200 text-lg"
+                  >
+                    Learn More
+                  </button>
+                </div>
+              </motion.div>
             </div>
           )}
         </div>
       )}
 
       {/* Animated Background */}
-      <div className="fixed inset-0 overflow-hidden">
+      <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-gray-200/30 via-transparent to-transparent"></div>
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070')] opacity-5 mix-blend-overlay"></div>
         
@@ -609,23 +742,71 @@ const Home = () => {
       </div>
 
       {/* Main Content */}
-      <div className="relative z-10 flex-grow">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+      <div id="plans" className="relative z-10 flex-grow">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
           {/* View Plans Section */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-8">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Ready to Get Started?</h2>
-              <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
-                Choose the perfect plan that fits your fitness goals and start your journey with us today.
-              </p>
-              <button 
-                onClick={() => navigate('/plan')}
-                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-all duration-200 transform hover:scale-105"
-              >
-                View All Plans
-              </button>
+          {!latestPayment && !isLoadingPayment && user && !isAdmin && (
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-12">
+              <div className="text-center">
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">Why Join Our Gym?</h2>
+                <p className="text-gray-600 mb-8 max-w-3xl mx-auto">
+                  Join our community of fitness enthusiasts and get access to state-of-the-art equipment, 
+                  expert trainers, and a variety of classes designed to help you reach your fitness goals.
+                </p>
+                
+                <div className="grid md:grid-cols-3 gap-6 mt-10">
+                  {[ 
+                    { 
+                      icon: '🏋️', 
+                      title: 'Modern Equipment', 
+                      description: 'Access to the latest fitness equipment and facilities' 
+                    },
+                    { 
+                      icon: '👨‍🏫', 
+                      title: 'Expert Trainers', 
+                      description: 'Certified trainers to guide you through your fitness journey' 
+                    },
+                    { 
+                      icon: '🧘', 
+                      title: 'Group Classes', 
+                      description: 'Wide variety of classes for all fitness levels' 
+                    }
+                  ].map((feature, index) => (
+                    <motion.div 
+                      key={index}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      className="bg-gray-50 p-6 rounded-xl text-center"
+                    >
+                      <div className="text-4xl mb-3">{feature.icon}</div>
+                      <h3 className="font-semibold text-lg mb-2">{feature.title}</h3>
+                      <p className="text-gray-600 text-sm">{feature.description}</p>
+                    </motion.div>
+                  ))}
+                </div>
+                
+                <div className="mt-10">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-4">Ready to start your fitness journey?</h3>
+                  <p className="text-gray-600 mb-6">Choose a membership plan that works for you</p>
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                    <button 
+                      onClick={() => navigate('/plan')}
+                      className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium py-2 px-8 rounded-lg transition-all duration-200 transform hover:scale-105"
+                    >
+                      View Membership Plans
+                    </button>
+                    <button 
+                      onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                      className="border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-medium py-2 px-8 rounded-lg transition-all duration-200"
+                    >
+                      Back to Top
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
