@@ -258,7 +258,7 @@ const Home = () => {
         if (v.$numberDecimal) return Number(v.$numberDecimal) || 0;
         return Number(v) || 0;
       };
-
+  
       // Build a compact object for UI
       setLatestPayment({
         planName: latest.planName || latest.plan?.name || latest.planType || latest.databaseInfo?.planType || 'Gym Membership',
